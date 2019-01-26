@@ -37,7 +37,9 @@
 
 #include "ln_interface.h"
 
-
+uint8_t LN_BACKOFF_MIN = LN_CARRIER_TICKS + LN_MASTER_DELAY;
+uint8_t LN_BACKOFF_INITIAL = LN_CARRIER_TICKS + LN_MASTER_DELAY + LN_INITIAL_PRIO_DELAY;
+uint8_t LN_BACKOFF_MAX = LN_CARRIER_TICKS + LN_MASTER_DELAY + LN_INITIAL_PRIO_DELAY + 10;
 
 static LnBuf *pstLnRxBuffer;  // this queue eats received LN messages
 
@@ -111,4 +113,20 @@ LN_STATUS sendLocoNet4BytePacketTry( byte OpCode, byte Data1, byte Data2, byte P
   SendPacket.data[ 2 ] = Data2 ;
 
   return sendLocoNetPacketTry( &SendPacket, PrioDelay ) ;
+}
+
+void enableLocoNetMaster(bool enable)
+{
+	if (enable)
+	{
+		LN_BACKOFF_MIN = LN_CARRIER_TICKS;
+		LN_BACKOFF_INITIAL = LN_CARRIER_TICKS;
+		LN_BACKOFF_MAX = LN_CARRIER_TICKS + LN_MASTER_DELAY + LN_INITIAL_PRIO_DELAY + 10;
+	}
+	else
+	{
+		LN_BACKOFF_MIN = LN_CARRIER_TICKS + LN_MASTER_DELAY;
+		LN_BACKOFF_INITIAL = LN_CARRIER_TICKS + LN_MASTER_DELAY + LN_INITIAL_PRIO_DELAY;
+		LN_BACKOFF_MAX = LN_CARRIER_TICKS + LN_MASTER_DELAY + LN_INITIAL_PRIO_DELAY + 10;
+	}
 }

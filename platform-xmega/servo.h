@@ -29,6 +29,90 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */ 
 
+/************************************************************************/
+/* Module Configuration                                                 */
+/************************************************************************/
+#ifdef CONFIGURATION
+
+/*
+ *	Autostart List
+ *
+ *	List of all processes that are started automatically on startup
+ *
+ */
+#ifdef AUTOSTART_CFG
+&servo_process,
+#endif
+
+/*
+ *	SV Configuration Table
+ *
+ *	List of all configuration variables defined by this module
+ *
+ */
+#ifdef SV_CFG
+SV_MSB(266, "Servo 1 Minimum H", eeprom.servo_min[0], servo_update_configuration)
+SV_MSB(267, "Servo 1 Maximum H", eeprom.servo_max[0], servo_update_configuration)
+SV(268, "Servo 1 Time", eeprom.servo_time_ratio[0], servo_update_configuration)
+SV_LSB(269, "Servo 1 Minimum L", eeprom.servo_min[0], servo_update_configuration)
+SV_LSB(270, "Servo 1 Maximum L", eeprom.servo_max[0], servo_update_configuration)
+SV_MSB(271, "Servo 2 Minimum H", eeprom.servo_min[1], servo_update_configuration)
+SV_MSB(272, "Servo 2 Maximum H", eeprom.servo_max[1], servo_update_configuration)
+SV(273, "Servo 2 Time", eeprom.servo_time_ratio[1], servo_update_configuration)
+SV_LSB(274, "Servo 2 Minimum L", eeprom.servo_min[1], servo_update_configuration)
+SV_LSB(275, "Servo 2 Maximum L", eeprom.servo_max[1], servo_update_configuration)
+SV_LSB(276, "Standby Delay L", eeprom.servo_timeout, 0)
+SV_MSB(277, "Standby Delay H", eeprom.servo_timeout, 0)
+SV_LSB(278, "Startup Delay L", eeprom.servo_startup_delay, 0)
+SV_MSB(279, "Startup Delay H", eeprom.servo_startup_delay, 0)
+SV(280, "Servo Start Method", eeprom.servo_start_method, servo_mode_update)
+SV(281, "Servo Configuration Register", eeprom.servo_config, servo_mode_update)
+#endif
+
+/*
+ *	EEPROM Configuration Variable Definition
+ */
+#ifdef EEPROM_CFG
+uint8_t servo_config;
+uint16_t servo_startup_delay;
+uint16_t servo_timeout;
+uint8_t servo_start_method;
+uint16_t servo_min[2];
+uint16_t servo_max[2];
+uint8_t servo_time_ratio[2];
+#endif
+
+/*
+ *	EEPROM Status Variable Definition
+ */
+#ifdef EEPROM_STATUS_CFG
+uint8_t servo_position[2];
+#endif
+
+/*
+ *	EEPROM Configuration Variable Default Configuration
+ */
+#ifdef EEPROM_DEFAULT
+.servo_config = (1<<SERVO_STATUS_ENABLE_PWM_A),
+.servo_startup_delay = 64,
+.servo_timeout = 0,
+.servo_start_method = 0,
+.servo_min = {32767, 32767},
+.servo_max = {32768, 32768},
+.servo_time_ratio = {16, 16},
+#endif
+
+/*
+ *	EEPROM Status Variable Default Configuration
+ */
+#ifdef EEPROM_STATUS_DEFAULT
+.servo_position = {0, 0},
+#endif
+
+#else
+/************************************************************************/
+/* Module Header File                                                   */
+/************************************************************************/
 #ifndef __SERVO_HP_H
 #define __SERVO_HP_H
 
@@ -45,34 +129,24 @@
 #define S22_PWM				3
 
 // Timing Borders for Servo Pulse
-#define SERVO_MINTIME      1000L    // 1ms
-#define SERVO_INTERVAL     1000L    // 1ms
+#define SERVO_MINTIME      750L    // 0.75ms
+#define SERVO_INTERVAL     1500L    // 1.5ms
 
 // defines for the Timer and the OCR
 // note: only valid for "rounded" F_CPU values
-#define T1_PRESCALER		16
+#define SERVO_PRESCALER		8
 
-#define SERVO_MIN          (F_CPU / 1000000L * SERVO_MINTIME / T1_PRESCALER)
-#define SERVO_DELTA        (F_CPU / 1000000L * SERVO_INTERVAL / T1_PRESCALER)
-#define SERVO_MAX          (F_CPU / 1000000L * (SERVO_MINTIME+SERVO_INTERVAL) / T1_PRESCALER)
+#define SERVO_MIN          (F_CPU / 1000000L * SERVO_MINTIME / SERVO_PRESCALER)
+#define SERVO_DELTA        (F_CPU / 1000000L * SERVO_INTERVAL / SERVO_PRESCALER)
+#define SERVO_MAX          (F_CPU / 1000000L * (SERVO_MINTIME+SERVO_INTERVAL) / SERVO_PRESCALER)
 
 // bit field for servo.status:
-//#define ST_BIT_POSITION		0		// Last valid position: 0: A/L , 1: B/R
 #define ST_BIT_MOVING    7          // 0=stopped, 1=moving
-#define ST_BIT_AT_SETPOINT	6
-//#define ST_BIT_TRANSMIT_STATUS	5
-//#define ST_BIT_MODE_MULTIPOSITION	4
-
-// bit field for servo.command
-//#define SC_BIT_POSITION	0
-#define SC_BIT_MOVING	7
 
 #define SERVO_STATUS_PWR                7
 #define SERVO_STATUS_PWR_ALWAYS_ON      6
 #define SERVO_STATUS_PWR_TEST			5
 #define SERVO_STATUS_INT_FLAG			4
-#define SERVO_STATUS_PWM_DISABLE		3
-#define SERVO_STATUS_TICK_FLAG			2
 #define SERVO_STATUS_ENABLE_PWM_B		1
 #define SERVO_STATUS_ENABLE_PWM_A		0
 
@@ -83,12 +157,7 @@ typedef struct SERVO_T
     uint16_t min;               // lower move limit [0..65535]
     uint16_t max;               // upper move limit [0..65535]
     
-    uint8_t status;          // Bit 0: ACTUAL:   0=pre A, 1=pre B movement
-                                    // Bit 1: MOVING:   0=at endpoint, 1=currently moving
-                                    // Bit 5: OUT_CTRL: 0=no, 1=yes
-                                    // Bit 6: REPEAT:   0=single, 1=forever
-                                    // Bit 7: TERMINATE: flag: terminate after next B
-	uint8_t command;								
+    uint8_t status;				// Bit 7: MOVING:   0=at endpoint, 1=currently moving
       
     uint16_t active_time;       // runtime: relative time to start point
                                     // 0xFFFF   = restart Servos
@@ -109,10 +178,12 @@ void servo_mode_update(void);
 extern t_servo servo[SERVO_COUNT];
 extern volatile uint8_t servo_status;
 extern volatile uint16_t servo_timer;
-extern volatile uint8_t servo_timer2;
 
 void servo_isr(void);
 void servo_init(void);
 
+PROCESS_NAME(servo_process);
+
 #endif
 
+#endif 

@@ -35,7 +35,6 @@
 #include "common_defs.h"
 #include <avr/pgmspace.h>
 
-void initSVCount(void);
 byte writeSVStorage(word offset, byte value);
 byte readSVStorage(word offset);
 
@@ -45,12 +44,6 @@ typedef struct sv_entry {
 	void (*update)(void);
 } sv_entry_t;
 
-typedef struct sv_block_entry {
-	uint8_t type;
-	uint8_t size;
-	void *variable;
-} sv_block_entry_t;
-
 #define SV_TABLE_BEGIN()   const struct sv_entry sv_table[] PROGMEM = {
 #define SV_CONST(x, name, val)	[x] = { 5, (void *) val, 0},
 #define SV(x, name, var, update)	[x] = { 1, &(var), update },
@@ -58,11 +51,5 @@ typedef struct sv_block_entry {
 #define SV_MSB(x, name, var, update)	[x] = { 1, &(((uint8_t *)&var)[1]), update },
 #define SV_TABLE_END()     };
 #define SV_COUNT	(sizeof(sv_table)/sizeof(struct sv_entry))
-
-#define SV_BLOCK_TABLE_BEGIN()	const struct sv_block_entry sv_block[] = {
-#define SV_BLOCK_MAP(x, size, name, ptr) [x] = { 1, size, ptr },
-#define SV_BLOCK(x, size, name, fun) [x] = { 2, size, fun },
-#define SV_BLOCK_TABLE_END()	};
-#define SV_BLOCK_COUNT	(sizeof(sv_block)/sizeof(struct sv_block_entry))
 
 #endif

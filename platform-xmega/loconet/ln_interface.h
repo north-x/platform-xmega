@@ -13,7 +13,7 @@
 ** The bit period is then the clock frequency / LocoNet Baud rate
 */
 
-#define LN_BIT_PERIOD       (F_CPU / 16666)
+#define LN_BIT_PERIOD       (F_CPU / 8 / 16666)
 
 typedef enum
 {
@@ -31,10 +31,18 @@ typedef enum
 #define   LN_CARRIER_TICKS      20  // carrier detect backoff - all devices have to wait this
 #define   LN_MASTER_DELAY        6  // non master devices have to wait this additionally
 #define   LN_INITIAL_PRIO_DELAY 20  // initial attempt adds priority delay
-#define   LN_BACKOFF_MIN      (LN_CARRIER_TICKS + LN_MASTER_DELAY)      // not going below this
-#define   LN_BACKOFF_INITIAL  (LN_BACKOFF_MIN + LN_INITIAL_PRIO_DELAY)  // for the first normal tx attempt
-#define   LN_BACKOFF_MAX      (LN_BACKOFF_INITIAL + 10)                 // lower priority is not supported
+//#define   LN_BACKOFF_MIN      (LN_CARRIER_TICKS + LN_MASTER_DELAY)      // not going below this
+//#define   LN_BACKOFF_INITIAL  (LN_BACKOFF_MIN + LN_INITIAL_PRIO_DELAY)  // for the first normal tx attempt
+//#define   LN_BACKOFF_MAX      (LN_BACKOFF_INITIAL + 10)                 // lower priority is not supported
 
+// Support to enable LN Master operation on the fly
+extern uint8_t LN_BACKOFF_MIN;
+extern uint8_t LN_BACKOFF_INITIAL;
+extern uint8_t LN_BACKOFF_MAX;
+void enableLocoNetMaster(bool enable);
+
+// Handling of message after transmission (1: copy message to receive buffer, 0: discard message)
+extern volatile uint8_t lnTxEcho;
 
 // Interface to lower layer
 // Must be implemented by hardware level module, ln_sw_uart.c or ln_hw_uart.c or...

@@ -40,12 +40,8 @@
 
 #include "sv_table.h"
 
-volatile uint8_t svChangedFlag = 0;
-uint16_t sv_count = 0;
-
 inline byte readSVStorage(word offset)
 {
-	uint8_t index;
 	sv_entry_t entry;
 	
 	if (offset<SV_COUNT)
@@ -61,37 +57,12 @@ inline byte readSVStorage(word offset)
 		}
 		return 0;
 	}
-	else
-	{
-		offset -= SV_COUNT;
-		
-		for (index=0;index<SV_BLOCK_COUNT;index++)
-		{
-			if (offset<sv_block[index].size)
-			{
-				switch (sv_block[index].type)
-				{
-					case 1:
-						return ((uint8_t *)sv_block[index].variable)[offset];
-						break;
-					case 2:
-					default:
-						return 0;
-				}
-			}
-			else
-			{
-				offset -= sv_block[index].size;
-			}
-		}
-	}
 	
 	return 0;
 }
 
 byte writeSVStorage(word offset, byte value)
 {
-	uint8_t index;
 	sv_entry_t entry;
 	
 	if (offset<SV_COUNT)
@@ -108,43 +79,13 @@ byte writeSVStorage(word offset, byte value)
 		if (entry.update!=0)
 			entry.update();
 	}
-	else
-	{
-		offset -= SV_COUNT;
 		
-		for (index=0;index<SV_BLOCK_COUNT;index++)
-		{
-			if (offset<sv_block[index].size)
-			{
-				switch (sv_block[index].type)
-				{
-					case 1:
-						((uint8_t *)sv_block[index].variable)[offset] = value;
-						svChangedFlag |= 1;
-						return 0;
-						break;
-					case 2:
-					default:
-						return 0;
-				}
-			}
-			else
-			{
-				offset -= sv_block[index].size;
-			}
-		}
-	}
-	
-	svChangedFlag |= 1;
 	return 0;
 }
 
 byte isValidSVStorage(word Offset)
 {
-	if (sv_count==0)
-		initSVCount();
-	
-	return (Offset<sv_count);
+	return (Offset<SV_COUNT);
 }
 
 word readSVDestinationId(void)
@@ -158,15 +99,4 @@ word writeSVDestinationId(word usId)
 	eeprom_shadow.sv_destination_id = usId;
 	eeprom_update_word(&eeprom_eemem.sv_destination_id, usId);
 	return 0;
-}
-
-void initSVCount(void)
-{
-	uint8_t index;
-	
-	sv_count = SV_COUNT;
-	for (index=0;index<SV_BLOCK_COUNT;index++)
-	{
-		sv_count += sv_block[index].size;
-	}
 }

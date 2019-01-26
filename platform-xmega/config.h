@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Manuel Vetterli
+ * Copyright (c) 2017, Manuel Vetterli
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -29,61 +29,14 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */ 
 
-#ifndef EEPROM_H
-#define	EEPROM_H
-
-#ifdef	__cplusplus
-extern "C" {
+#if defined(SV_CMD_CALLBACK) || defined(LN_RX_CALLBACK) || defined(SV_CFG) || defined(EEPROM_CFG) || defined(EEPROM_STATUS_CFG) || defined(EEPROM_DEFAULT) || defined(EEPROM_STATUS_DEFAULT) || defined(AUTOSTART_CFG)
+	#define CONFIGURATION
+#else
+	#include "sys/process.h"
 #endif
+	
+#include "ln_support.h"
+#include "port.h"
 
-
-#define EEPROM_BASE     0
-   
-typedef struct t_eeprom_storage {
-	uint8_t salt;
-	uint16_t sv_serial_number;
-	uint16_t sv_destination_id;
-#define EEPROM_CFG
-#include "config.h"
-#undef EEPROM_CFG
-} t_eeprom_storage;
-
-typedef struct t_eeprom_status {
-	uint8_t flags;
-#define EEPROM_STATUS_CFG
-#include "config.h"
-#undef EEPROM_STATUS_CFG
-} t_eeprom_status;
-
-typedef struct t_eeprom_default {
-	struct t_eeprom_storage eeprom;
-	struct t_eeprom_status eeprom_status;
-} t_eeprom_default;
-
-void eeprom_init(void);
-void eeprom_read(unsigned char addr, unsigned char len, unsigned char *buf);
-unsigned char eeprom_write(unsigned char addr, unsigned char len, unsigned char *buf);
-
-void eeprom_load_storage(void);
-void eeprom_sync_storage(void);
-void eeprom_load_status(void);
-void eeprom_sync_status(void);
-void eeprom_load_defaults(void);
-
-extern struct t_eeprom_storage eeprom;
-extern struct t_eeprom_storage eeprom_shadow;
-extern struct t_eeprom_status eeprom_status;
-extern struct t_eeprom_status eeprom_status_shadow;
-extern struct t_eeprom_storage eeprom_eemem;
-extern struct t_eeprom_status eeprom_status_eemem;
-
-extern unsigned char eeprom_temp;
-void eeprom_test_read(void);
-void eeprom_test_write(void);
-
-#ifdef	__cplusplus
-}
-#endif
-
-#endif	/* EEPROM_H */
-
+#define SOFTWARE_VERSION	0
+#undef CONFIGURATION

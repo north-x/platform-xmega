@@ -83,7 +83,10 @@ PROCESS_THREAD(usb_process, ev, data)
 		
 			if (getLnMsgSize(LnPacket))
 			{
+				uint8_t tmp = lnTxEcho;
+				lnTxEcho = 1;
 				sendLocoNetPacket(LnPacket);
+				lnTxEcho = tmp;
 			}
 			usb_pipe_done_read(&ep_out);
 		}

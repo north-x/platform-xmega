@@ -71,7 +71,6 @@
 #include <avr/io.h>
 #include <avr/interrupt.h>
 
-#include "port.h"
 
 /* Two tick counters avoid a software divide when CLOCK_SECOND is not a power of two. */
 #if CLOCK_SECOND && (CLOCK_SECOND - 1)
@@ -205,14 +204,7 @@ void AVR_OUTPUT_COMPARE_INT(void);
 #else
 ISR(AVR_OUTPUT_COMPARE_INT)
 {
-	static uint8_t subcount = 0;
-	TCC1.CCB += CLOCK_PERVAL/4;
-	
-	pwm_tick();
-	subcount++;
-	
-	if ((subcount%4)!=0)
-		return;
+	TCC1.CCB += CLOCK_PERVAL;
 	
     count++;
 #if TWO_COUNTERS

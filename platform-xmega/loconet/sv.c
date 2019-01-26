@@ -138,7 +138,12 @@ SV_STATUS doSVDeferredProcessing( void )
     
     encodePeerData( &msg.px, unData.abPlain );
     
-    if( sendLocoNetPacketTry( &msg, LN_BACKOFF_INITIAL + ( unData.stDecoded.unSerialNumber.b.lo % (byte) 10 ) ) != LN_DONE )
+	uint8_t tmp = lnTxEcho;
+	lnTxEcho = 1;
+	LN_STATUS status = sendLocoNetPacketTry( &msg, LN_BACKOFF_INITIAL + ( unData.stDecoded.unSerialNumber.b.lo % (byte) 10 ) );
+    lnTxEcho = tmp;
+	
+	if( status != LN_DONE )
       return SV_DEFERRED_PROCESSING_NEEDED ;
 
     DeferredProcessingRequired = 0 ;
@@ -271,7 +276,10 @@ SV_STATUS processSVMessage( lnMsg *LnPacket )
 
   LnPacket->sv.sv_cmd |= 0x40;    // flag the message as reply
 
+  uint8_t tmp = lnTxEcho;
+  lnTxEcho = 1;
   sendLocoNetPacket(LnPacket);   // send successful reply
+  lnTxEcho = tmp;
 
   if (LnPacket->sv.sv_cmd == (SV_RECONFIGURE | 0x40))
   {

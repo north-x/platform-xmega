@@ -37,7 +37,7 @@
         </dependencies>
       </framework-data>
     </AsfFrameworkConfig>
-    <avrtool>com.atmel.avrdbg.tool.simulator</avrtool>
+    <avrtool>com.atmel.avrdbg.tool.avrdragon</avrtool>
     <com_atmel_avrdbg_tool_simulator>
       <ToolOptions>
         <InterfaceProperties>
@@ -62,6 +62,7 @@
       <ToolNumber>00A2000015DA</ToolNumber>
       <ToolName>AVR Dragon</ToolName>
     </com_atmel_avrdbg_tool_avrdragon>
+    <preserveEEPROM>False</preserveEEPROM>
   </PropertyGroup>
   <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
     <ToolchainSettings>
@@ -75,7 +76,6 @@
         <avrgcc.compiler.symbols.DefSymbols>
           <ListValues>
             <Value>F_CPU=32000000L</Value>
-            <Value>SOFTWARE_VERSION=4</Value>
             <Value>USB_MAXEP=2</Value>
             <Value>AVR</Value>
             <Value>NDEBUG</Value>
@@ -86,7 +86,6 @@
             <Value>.</Value>
             <Value>..</Value>
             <Value>../loconet</Value>
-            <Value>../ubasic</Value>
           </ListValues>
         </avrgcc.compiler.directories.IncludePaths>
         <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
@@ -113,7 +112,6 @@
         <avrgcc.compiler.symbols.DefSymbols>
           <ListValues>
             <Value>F_CPU=32000000L</Value>
-            <Value>SOFTWARE_VERSION=4</Value>
             <Value>USB_MAXEP=2</Value>
             <Value>AVR</Value>
           </ListValues>
@@ -123,7 +121,6 @@
             <Value>.</Value>
             <Value>..</Value>
             <Value>../loconet</Value>
-            <Value>../ubasic</Value>
           </ListValues>
         </avrgcc.compiler.directories.IncludePaths>
         <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
@@ -141,7 +138,16 @@
     </ToolchainSettings>
   </PropertyGroup>
   <ItemGroup>
+    <Compile Include="config.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="contiki-conf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_sw_uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_sw_uart.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="main.c">
@@ -163,9 +169,6 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="eeprom.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ln_hwtx_hwrx_uart.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="ln_support.c">
@@ -219,12 +222,6 @@
     <Compile Include="port.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="servo.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="servo.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="sv_support.c">
       <SubType>compile</SubType>
     </Compile>
@@ -235,6 +232,9 @@
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="sys\arg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\build_defs.h">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="sys\cc.h">
@@ -279,27 +279,6 @@
     <Compile Include="sys\utils.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="ubasic\basic_cfg.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\basic_interface.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\platform.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\tokenizer.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\tokenizer.h">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\ubasic.c">
-      <SubType>compile</SubType>
-    </Compile>
-    <Compile Include="ubasic\ubasic.h">
-      <SubType>compile</SubType>
-    </Compile>
     <Compile Include="usb\Common.h">
       <SubType>compile</SubType>
     </Compile>
@@ -333,14 +312,28 @@
     <Compile Include="usb_support.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="eam.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="eam.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="wa2.c">
+      <SubType>compile</SubType>
+    </None>
     <Compile Include="wa2.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="servo.c">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev" />
     <Folder Include="loconet" />
-    <Folder Include="ubasic" />
     <Folder Include="usb" />
     <Folder Include="sys" />
   </ItemGroup>

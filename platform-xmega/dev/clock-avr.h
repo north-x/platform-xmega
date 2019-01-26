@@ -296,7 +296,7 @@
 	/* Prescaler 8 */ \
 	TCC1.CNT = 0; \
 	TCC1.PER = 0xFFFF; \
-	TCC1.CCB = CLOCK_PERVAL/4; \
+	TCC1.CCB = CLOCK_PERVAL; \
 	TCC1.CTRLA = TC_CLKSEL_DIV8_gc; \
 	TCC1.CTRLB = 0;			/* Normal mode PER = TOP */\
 	TCC1.CTRLD = 0;			/* No action for incoming events */\

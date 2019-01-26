@@ -32,10 +32,9 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
+#include "sys/process.h"
 #include "eeprom.h"
 #include "servo.h"
-#include "port.h"
-#include "sys/process.h"
 
 #if defined(__AVR__)
 #include <avr/io.h>
@@ -51,12 +50,13 @@
 PROCESS(servo_process,"Servo Process");
 
 unsigned int calc_servo_next_val(unsigned char nr);
+void servo_power_enable(void);
+void servo_power_disable(void);
 
 volatile uint8_t servo_status = 0;
 volatile uint16_t servo_timer = 0;
-volatile uint8_t servo_timer2 = 0;
 uint8_t servo_delay = 3;
-uint8_t servo_start_method = 1;
+uint8_t servo_start_method = 0;
 
 volatile enum _ServoIsrState
 {
@@ -65,7 +65,6 @@ volatile enum _ServoIsrState
 	SI_TURNON_WAIT_1,
 	SI_TURNON_2,
 	SI_TURNON_WAIT_2,
-	SI_TURNON_3,
 	SI_RUNNING
 } ServoIsrState = SI_IDLE;
 
@@ -73,11 +72,7 @@ volatile enum _ServoIsrState
 // Timing Definitions:
 // (all values given in us)
 
-#define TICK_PERIOD       20000L    // 20ms tick for Timing Engine
-                                    // => possible values for timings up to
-                                    //    5.1s (=255/0.020)
-                                    // note: this is also used as frame for
-                                    // Servo-Outputs (OCR1A and OCR1B)
+#define TICK_PERIOD       15625L
 
 t_servo servo[SERVO_COUNT];
 
@@ -239,47 +234,59 @@ void servo_init(void)
 	servo[1].pulse_value = servo_calc_next_val(1);
 	
 	// Init code for ATxmega
-	#define PERVAL   (F_CPU / 1000000L * TICK_PERIOD / T1_PRESCALER)
-	
-	// Event channel 0: 2 MHz clock
-	EVSYS.CH2MUX = EVSYS_CHMUX_PRESCALER_16_gc;
-	
+	#define PERVAL   (F_CPU / 1000000L * TICK_PERIOD / SERVO_PRESCALER)
+		
 	// Initial conditions of timer
 	TCC0.CNT = 0;
 	TCC0.PER = PERVAL;
-	TCC0.CCA = PERVAL;
-	TCC0.CCB = PERVAL;
-	TCC0.CCC = PERVAL;
-	TCC0.CCD = PERVAL;
+	TCC0.CCA = PERVAL+1;
+	TCC0.CCB = PERVAL+1;
+	TCC0.CCC = PERVAL+1;
+	TCC0.CCD = PERVAL+1;
 	
 	// Mode: Single Slope PWM
 	TCC0.CTRLB = TC_WGMODE_SINGLESLOPE_gc;
-	// Clock source: Event channel 0
-	TCC0.CTRLA = TC_CLKSEL_EVCH2_gc;
+	// Clock source: Prescaler 8
+	TCC0.CTRLA = TC_CLKSEL_DIV8_gc;
 	// Clear pending interrupts
 	TCC0.INTFLAGS = TC0_OVFIF_bm;
 	// Enable low priority interrupt
 	TCC0.INTCTRLA = TC_OVFINTLVL_LO_gc;
 	
-	//Note: Compare units can be enabled by the following statements
-	//TCC0.CTRLB |= TC0_CCAEN_bm; etc
+	if (servo_status&(1<<SERVO_STATUS_ENABLE_PWM_A))
+	{
+		TCC0.CTRLB |= ((1<<(S12_PWM+4))|(1<<(S22_PWM+4)));
+		PORTC.DIRSET = (1<<S12_PWM)|(1<<S22_PWM);
+		eeprom.port_dir |= (1<<0)|(1<<1);
+	}
 	
-	PORTC.OUTSET = (1<<S12_PWM)|(1<<S22_PWM);
-	PORTC.DIRSET = (1<<S12_PWM)|(1<<S22_PWM);
-	
-	TCC0.CTRLB = (1<<(S12_PWM+4)) | (1<<(S22_PWM+4)) | TC_WGMODE_SINGLESLOPE_gc;
+	if (servo_status&(1<<SERVO_STATUS_ENABLE_PWM_B))
+	{
+		TCC0.CTRLB |= ((1<<(S1_PWM+4))|(1<<(S2_PWM+4)));
+		PORTC.PIN0CTRL |= PORT_INVEN_bm;
+		PORTC.PIN1CTRL |= PORT_INVEN_bm;
+		PORTC.DIRSET = (1<<S1_PWM)|(1<<S2_PWM);
+		eeprom.port_dir |= (1<<12)|(1<<13);
+	}
 	
 	// Startup delay
 	servo_timer = eeprom.servo_startup_delay;
 	
-	// Now start process
-	process_start(&servo_process, NULL);
 }
 
 PROCESS_THREAD(servo_process, ev, data)
 {
 	uint8_t index;
 	PROCESS_BEGIN();
+	
+	// Check configuration
+	if (!(eeprom.servo_config&((1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B))))
+	{
+		process_exit(PROCESS_CURRENT());
+	}
+	
+	// Initialization
+	servo_init();
 
 	// Wait until the startup delay is over
 	do {
@@ -288,7 +295,7 @@ PROCESS_THREAD(servo_process, ev, data)
 		
 	// Enable Power (for 1s)
 	servo_status |= (1<<SERVO_STATUS_PWR_TEST);
-	servo_timer = 50;
+	servo_timer = 64;
 	
 	do {
 		PROCESS_PAUSE();
@@ -305,20 +312,13 @@ PROCESS_THREAD(servo_process, ev, data)
 		for (index=0;index<2;index++)
 		{
 			if (servo[index].status&(1<<ST_BIT_MOVING))
-			{
-				servo[index].command |= (1<<SC_BIT_MOVING);
-							
+			{							
 				// Write flags to eeprom after ~5s if the user has power always on
 				// or after the timeout occurs
 				if (eeprom.servo_timeout==0)
 					servo_timer = 0xFF;
 				else
 					servo_timer = eeprom.servo_timeout;
-			}
-			else
-			{
-				// Servo is not moving
-				servo[index].command &= ~(1<<SC_BIT_MOVING);
 			}
 		}
 					
@@ -370,7 +370,7 @@ void servo_isr(void)
     T3CONbits.TMR3ON = 0;
 #endif
 	
-	servo_status |= (1<<SERVO_STATUS_INT_FLAG)|(1<<SERVO_STATUS_TICK_FLAG);
+	servo_status |= (1<<SERVO_STATUS_INT_FLAG);
 	
 	if (servo_isr_timer)
 		servo_isr_timer--;
@@ -403,25 +403,6 @@ void servo_isr(void)
 			{
 				default:
 				case 0:
-					servo_isr_timer = 0;
-					break;
-				case 1:
-				case 2:
-#if defined(__18CXX)
-					LATDbits.LATD0 = 1;
-					LATDbits.LATD2 = 1;
-#elif defined (__AVR_XMEGA__)
-					TCC0.CCA = PERVAL;
-					TCC0.CCB = PERVAL;
-					TCC0.CCC = PERVAL;
-					TCC0.CCD = PERVAL;
-#elif defined(__AVR__)
-					OCR1A = TOPVAL;
-					OCR1B = TOPVAL;
-#endif
-					servo_isr_timer = servo_delay;
-					break;
-				case 3:
 #if defined(__18CXX)
 					LATDbits.LATD0 = 0;
 					LATDbits.LATD2 = 0;
@@ -435,6 +416,33 @@ void servo_isr(void)
 					OCR1B = 0;
 #endif
 					servo_isr_timer = servo_delay;
+					break;
+				case 1:
+#if defined(__18CXX)
+					LATDbits.LATD0 = 1;
+					LATDbits.LATD2 = 1;
+#elif defined (__AVR_XMEGA__)
+					TCC0.CCA = PERVAL+1;
+					TCC0.CCB = PERVAL+1;
+					TCC0.CCC = PERVAL+1;
+					TCC0.CCD = PERVAL+1;
+#elif defined(__AVR__)
+					OCR1A = TOPVAL;
+					OCR1B = TOPVAL;
+#endif
+					servo_isr_timer = servo_delay;
+					break;
+				case 2:
+					servo_isr_timer = servo_delay;
+#if defined(__AVR_XMEGA__)
+					TCC0.CCABUF = servo[1].pulse_value;
+					TCC0.CCBBUF = servo[0].pulse_value;
+					TCC0.CCCBUF = servo[0].pulse_value;
+					TCC0.CCDBUF = servo[1].pulse_value;
+#elif defined(__AVR__)
+					OCR1A = servo[0].pulse_value;
+					OCR1B = servo[1].pulse_value;
+#endif
 					break;
 			}
 			ServoIsrState = SI_TURNON_WAIT_1;
@@ -462,28 +470,6 @@ void servo_isr(void)
 			{
 				break;
 			}
-			ServoIsrState = SI_TURNON_3;
-		case SI_TURNON_3:
-			switch (servo_start_method)
-			{
-				case 2:
-#if defined(__18CXX)
-					LATDbits.LATD0 = 0;
-					LATDbits.LATD2 = 0;
-
-					// Reset Timer
-				    TMR3H = 0;
-				    TMR3L = 0;
-
-				    // Start Timer
-				    T3CONbits.TMR3ON = 1;
-					
-					while (TMR3L<128);
-#endif
-					break;
-				default:
-					break;
-			}
 
 			servo_status |= (1<<SERVO_STATUS_PWR);
 
@@ -502,23 +488,17 @@ void servo_isr(void)
 				// Start Timer
 				T3CONbits.TMR3ON = 1;
 #elif defined(__AVR_XMEGA__)
-				TCC0.CCA = PERVAL;
-				TCC0.CCB = PERVAL;
-				TCC0.CCC = PERVAL;
-				TCC0.CCD = PERVAL;
+				TCC0.CCA = PERVAL+1;
+				TCC0.CCB = PERVAL+1;
+				TCC0.CCC = PERVAL+1;
+				TCC0.CCD = PERVAL+1;
 				
-				if (!(servo_status&(1<<SERVO_STATUS_PWM_DISABLE)))
-				{
-					servo_power_disable();
-				}
+				servo_power_disable();
 #elif defined(__AVR__)
 				OCR1A = TOPVAL;
 				OCR1B = TOPVAL;
-				
-				if (!(servo_status&(1<<SERVO_STATUS_PWM_DISABLE)))
-				{
-					PORTB &= ~(1<<PB0);
-				}
+
+				PORTB &= ~(1<<PB0);
 #endif				
 		        return;
 		    }
@@ -575,6 +555,7 @@ void servo_update_configuration(void)
 void servo_mode_update(void)
 {	
 	servo_start_method = eeprom.servo_start_method;
+	servo_status = eeprom.servo_config|(servo_status&~((1<<SERVO_STATUS_PWR_ALWAYS_ON)|(1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B)));
 	
 	if (servo_status&(1<<SERVO_STATUS_ENABLE_PWM_A))
 		TCC0.CTRLB |= ((1<<(S12_PWM+4))|(1<<(S22_PWM+4)));

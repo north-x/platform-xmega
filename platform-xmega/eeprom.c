@@ -33,64 +33,35 @@
 #include <string.h>
 #include <stdio.h>
 #include <avr/eeprom.h>
+#include <avr/pgmspace.h>
 
-#include "wa2.h"
+#include "config.h"
 #include "eeprom.h"
-#include "port.h"
-#include "platform.h"
-#include "ubasic.h"
 
 struct t_eeprom_storage eeprom;
 struct t_eeprom_storage eeprom_shadow;
-struct t_eeprom_storage eeprom_eemem EEMEM;
+struct t_eeprom_storage eeprom_eemem __attribute__((section (".eeprom,\"aw\",@progbits\n.p2align 5;")));
 struct t_eeprom_status eeprom_status;
 struct t_eeprom_status eeprom_status_shadow;
 struct t_eeprom_status eeprom_status_eemem EEMEM;
 
-struct t_eeprom_storage eeprom_default = {
-			.salt = 0xAA+SOFTWARE_VERSION,
-			.sv_serial_number = 0xFFFF,
-			.sv_destination_id = 0xFFFF,
-			.ubasic_autostart = (1<<0)|(1<<1)|(0<<2)|(0<<3),
-			.configA = (0<<WA2_CONF_PWM_OUTPUTS_ENABLE)|(0<<WA2_CONF_PWM_CHANNEL7_ENABLE)|(1<<WA2_CONF_INPUTS_PULLUP_ENABLE)|(1<<WA2_CONF_SERVO_ENABLE_PWM_A),
-			.configB = 0,
-			.ln_threshold = 25,
-			.servo_startup_delay = 80,
-			.servo_timeout = 0,
-			.servo_start_method = 1,
-#if 0
-			.servo_min = {15000, 15000},
-			.servo_max = {45000, 45000},
-#else
-			.servo_min = {32767, 32767},
-			.servo_max = {32768, 32768},
-#endif
-			.servo_time_ratio = {16, 16},
-			.ln_gpio_opcode =
-			{{ 0xB0, 0x01, 0x20},
-			 { 0xB0, 0x01, 0x00},
-			 { 0xB0, 0x02, 0x20},
-			 { 0xB0, 0x02, 0x00},
-			 { 0xB0, 0x03, 0x20},
-			 { 0xB0, 0x03, 0x00},
-			 { 0, 0, 0},
-			 { 0, 0, 0},
-			 { 0xB0, 0x04, 0x20},
-			 { 0xB0, 0x04, 0x00},
-			 { 0xB0, 0x05, 0x20},
-			 { 0xB0, 0x05, 0x00},
-			 { 0xB0, 0x06, 0x20},
-			 { 0xB0, 0x06, 0x00},
-			 { 0, 0, 0},
-			 { 0, 0, 0}},
-        };
+const struct t_eeprom_default eeprom_default PROGMEM = {
+	.eeprom = {
+				.salt = SOFTWARE_VERSION,
+				.sv_serial_number = 0xFFFF,
+				.sv_destination_id = 0xFFFF,
+	#define EEPROM_DEFAULT
+	#include "config.h"
+	#undef EEPROM_DEFAULT
+			},
 
-struct t_eeprom_status eeprom_status_default = {
-	.flags = 0,
-	.ln_gpio_status = 0,
-	.relay_request = 0,
-	.servo_position = { 127, 127 }
-	};
+	.eeprom_status = {
+		.flags = 0,
+	#define EEPROM_STATUS_DEFAULT
+	#include "config.h"
+	#undef EEPROM_STATUS_DEFAULT
+		}
+};
 
 void eeprom_load_status(void)
 {
@@ -105,16 +76,14 @@ void eeprom_load_storage(void)
 	
 	memcpy(&eeprom_shadow, &eeprom, sizeof(t_eeprom_storage));
 	
-	if (eeprom.salt!=eeprom_default.salt)
+	if (eeprom.salt!=pgm_read_byte(&eeprom_default.eeprom.salt))
 		eeprom_load_defaults();
 }
 
 void eeprom_load_defaults(void)
 {
-	memcpy(&eeprom, &eeprom_default, sizeof(t_eeprom_storage));
-	memcpy(&eeprom_status, &eeprom_status_default, sizeof(t_eeprom_status));
-	ubasic_load_default_scripts();
-	ubasic_save_scripts();
+	memcpy_P(&eeprom, &eeprom_default.eeprom, sizeof(t_eeprom_storage));
+	memcpy_P(&eeprom_status, &eeprom_default.eeprom_status, sizeof(t_eeprom_status));
 }
 
 void eeprom_sync_storage(void)
