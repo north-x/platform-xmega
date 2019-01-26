@@ -37,6 +37,7 @@
 	
 #include "ln_support.h"
 #include "port.h"
+#include "eam.h"
 
-#define SOFTWARE_VERSION	0
+#define SOFTWARE_VERSION	1
 #undef CONFIGURATION
