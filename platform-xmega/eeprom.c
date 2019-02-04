@@ -77,7 +77,11 @@ void eeprom_load_storage(void)
 	memcpy(&eeprom_shadow, &eeprom, sizeof(t_eeprom_storage));
 	
 	if (eeprom.salt!=pgm_read_byte(&eeprom_default.eeprom.salt))
+	{
 		eeprom_load_defaults();
+		eeprom_sync_status();
+		eeprom_sync_storage();
+	}
 }
 
 void eeprom_load_defaults(void)
