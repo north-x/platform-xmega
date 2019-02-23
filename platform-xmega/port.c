@@ -234,7 +234,7 @@ uint8_t port_map_get_bit(uint8_t index)
 	}
 	else if (index<152)
 	{
-		return port_blink_phase&(1<<(index-136)) ? 1 : 0;
+		return port_blink_phase&(1<<(index-144)) ? 1 : 0;
 	}
 	
 	return 0;
