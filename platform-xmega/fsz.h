@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Manuel Vetterli
+ * Copyright (c) 2019, Manuel Vetterli
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,7 @@
  *
  */
 #ifdef AUTOSTART_CFG
-&relay_process,
-&wa2_process,
+//&fsz_process,
 #endif
 
 /*
@@ -52,98 +51,66 @@
  *
  */
 #ifdef SV_CFG
-SV(280, "Servo Multipos Opcode Select", eeprom.servo_multipos_opcode, 0)
-SV(281, "Servo 1 Multipos Off", eeprom.servo_multipos[0][0], 0)
-SV(282, "Servo 1 Multipos On", eeprom.servo_multipos[0][1], 0)
-SV(283, "Servo 2 Multipos Off", eeprom.servo_multipos[1][0], 0)
-SV(284, "Servo 2 Multipos On", eeprom.servo_multipos[1][1], 0)
+SV(353, "FSZ Set Num", fsz_sv_temp, fsz_sv_helper_set)
+SV(354, "FSZ Clear Num", fsz_sv_temp, fsz_sv_helper_clear)
+SV_LSB(355, "FSZ1 Set LSB", fsz_register[0].set, 0)
+SV_MSB(356, "FSZ1 Set MSB", fsz_register[0].set, 0)
+SV_LSB(357, "FSZ1 Clear LSB", fsz_register[0].clear, 0)
+SV_MSB(358, "FSZ1 Clear MSB", fsz_register[0].clear, 0)
+SV_LSB(359, "FSZ1 Reg LSB", fsz_register[0].value, 0)
+SV_MSB(360, "FSZ1 Reg MSB", fsz_register[0].value, 0)
+SV_LSB(361, "FSZ2 Set LSB", fsz_register[1].set, 0)
+SV_MSB(362, "FSZ2 Set MSB", fsz_register[1].set, 0)
+SV_LSB(363, "FSZ2 Clear LSB", fsz_register[1].clear, 0)
+SV_MSB(364, "FSZ2 Clear MSB", fsz_register[1].clear, 0)
+SV_LSB(365, "FSZ2 Reg LSB", fsz_register[1].value, 0)
+SV_MSB(366, "FSZ2 Reg MSB", fsz_register[1].value, 0)
 #endif
 
 /*
  *	EEPROM Configuration Variable Definition
  */
 #ifdef EEPROM_CFG
-uint8_t servo_multipos_opcode;
-uint8_t servo_multipos[2][2];
-//uint16_t test_config16;
-//uint8_t test_config_array[2];
 #endif
 
 /*
  *	EEPROM Status Variable Definition
  */
 #ifdef EEPROM_STATUS_CFG
-uint8_t relay_request;
 #endif
 
 /*
  *	EEPROM Configuration Variable Default Configuration
  */
 #ifdef EEPROM_DEFAULT
-.servo_multipos_opcode = 0,
-.servo_multipos = {{64, 192}, {64, 192}},
-//.test_config16 = 12345,
-//.test_config_array = {16, 16},
 #endif
 
 /*
  *	EEPROM Status Variable Default Configuration
  */
 #ifdef EEPROM_STATUS_DEFAULT
-.relay_request = 0,
 #endif
-
-/*
- * LN Receive Callback Definition
- *
- * Function to be called when a valid packet was received
- */
-#ifdef LN_RX_CALLBACK
-LN_RX_CALLBACK(ln_throttle_process)
-#endif
-
-/*
- * SV CMD Callback Definition
- *
- * Function to be called when SV#5 is written
- */
-#ifdef SV_CMD_CALLBACK
-SV_CMD_CALLBACK(ln_sv_cmd_callback)
-#endif
-
 
 #else
 /************************************************************************/
 /* Module Header File                                                   */
 /************************************************************************/
-#ifndef wa2_H_
-#define wa2_H_
+#ifndef fsz_H_
+#define fsz_H_
 
+typedef struct fsz_reg {
+	uint16_t value;
+	uint16_t shadow;
+	uint16_t set;
+	uint16_t clear;
+} fsz_reg_t;
 
-PROCESS_NAME(wa2_process);
-PROCESS_NAME(relay_process);
-void ln_throttle_process(lnMsg *LnPacket);
-void ln_sv_cmd_callback(uint8_t cmd);
+extern fsz_reg_t fsz_register[2];
+extern uint8_t fsz_sr_reg[4];
+extern uint8_t fsz_sv_temp;
 
-void relay_governor(void);
+void fsz_sv_helper_set(void);
+void fsz_sv_helper_clear(void);
 
-void servo_power_enable(void);
-void servo_power_disable(void);
-
-#define PU_SERVO_POWER	0
-#define	PU_RELAY_1		1
-#define PU_RELAY_2		2
-#define PU_RELAY_RC1	3
-#define PU_RELAY_RC2	4
-#define PU_RELAY_RC3	5
-#define PU_RELAY_RC4	6
-
-#define RELAY_CMD_LEFT1		1
-#define RELAY_CMD_RIGHT1	2
-#define RELAY_CMD_LEFT2		4
-#define RELAY_CMD_RIGHT2	8
-#define RELAY_CMD_LEFT		1
-#define RELAY_CMD_RIGHT		2
-
-#endif /* wa2_H_ */
+#endif /* fsz_H_ */
 #endif

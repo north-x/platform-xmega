@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Manuel Vetterli
+ * Copyright (c) 2019, Manuel Vetterli
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,7 @@
  *
  */
 #ifdef AUTOSTART_CFG
-&relay_process,
-&wa2_process,
+&gbm8_process,
 #endif
 
 /*
@@ -52,98 +51,57 @@
  *
  */
 #ifdef SV_CFG
-SV(280, "Servo Multipos Opcode Select", eeprom.servo_multipos_opcode, 0)
-SV(281, "Servo 1 Multipos Off", eeprom.servo_multipos[0][0], 0)
-SV(282, "Servo 1 Multipos On", eeprom.servo_multipos[0][1], 0)
-SV(283, "Servo 2 Multipos Off", eeprom.servo_multipos[1][0], 0)
-SV(284, "Servo 2 Multipos On", eeprom.servo_multipos[1][1], 0)
 #endif
 
 /*
  *	EEPROM Configuration Variable Definition
  */
 #ifdef EEPROM_CFG
-uint8_t servo_multipos_opcode;
-uint8_t servo_multipos[2][2];
-//uint16_t test_config16;
-//uint8_t test_config_array[2];
 #endif
 
 /*
  *	EEPROM Status Variable Definition
  */
 #ifdef EEPROM_STATUS_CFG
-uint8_t relay_request;
 #endif
 
 /*
  *	EEPROM Configuration Variable Default Configuration
  */
 #ifdef EEPROM_DEFAULT
-.servo_multipos_opcode = 0,
-.servo_multipos = {{64, 192}, {64, 192}},
-//.test_config16 = 12345,
-//.test_config_array = {16, 16},
 #endif
 
 /*
  *	EEPROM Status Variable Default Configuration
  */
 #ifdef EEPROM_STATUS_DEFAULT
-.relay_request = 0,
 #endif
-
-/*
- * LN Receive Callback Definition
- *
- * Function to be called when a valid packet was received
- */
-#ifdef LN_RX_CALLBACK
-LN_RX_CALLBACK(ln_throttle_process)
-#endif
-
-/*
- * SV CMD Callback Definition
- *
- * Function to be called when SV#5 is written
- */
-#ifdef SV_CMD_CALLBACK
-SV_CMD_CALLBACK(ln_sv_cmd_callback)
-#endif
-
 
 #else
 /************************************************************************/
 /* Module Header File                                                   */
 /************************************************************************/
-#ifndef wa2_H_
-#define wa2_H_
+#ifndef gbm8_H_
+#define gbm8_H_
 
+PROCESS_NAME(gbm8_process);
 
-PROCESS_NAME(wa2_process);
-PROCESS_NAME(relay_process);
-void ln_throttle_process(lnMsg *LnPacket);
-void ln_sv_cmd_callback(uint8_t cmd);
+/************************************************************************/
+/* Config Flags                                                         */
+/************************************************************************/
+#define GBM_MODE_INIT 0
+#define GBM_MODE_NORMAL	1
+#define GBM_MODE_SBK 2
+#define GBM_MODE_FSZ 3
 
-void relay_governor(void);
+/************************************************************************/
+/* Function Prototypes                                                  */
+/************************************************************************/
+void update_gbm_mode(void);
+void gbm8_hw_detect(void);
 
-void servo_power_enable(void);
-void servo_power_disable(void);
+extern uint8_t gbm_mode;
+extern uint8_t gbm_version;
 
-#define PU_SERVO_POWER	0
-#define	PU_RELAY_1		1
-#define PU_RELAY_2		2
-#define PU_RELAY_RC1	3
-#define PU_RELAY_RC2	4
-#define PU_RELAY_RC3	5
-#define PU_RELAY_RC4	6
-
-#define RELAY_CMD_LEFT1		1
-#define RELAY_CMD_RIGHT1	2
-#define RELAY_CMD_LEFT2		4
-#define RELAY_CMD_RIGHT2	8
-#define RELAY_CMD_LEFT		1
-#define RELAY_CMD_RIGHT		2
-
-#endif /* wa2_H_ */
+#endif /* gbm8_H_ */
 #endif

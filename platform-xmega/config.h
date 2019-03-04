@@ -35,8 +35,12 @@
 	#include "sys/process.h"
 #endif
 	
+#include "gbm8.h"
 #include "ln_support.h"
 #include "port.h"
+#include "gbm.h"
+#include "sbk.h"
+#include "fsz.h"
 
-#define SOFTWARE_VERSION	0
+#define SOFTWARE_VERSION	3
 #undef CONFIGURATION

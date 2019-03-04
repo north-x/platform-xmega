@@ -77,6 +77,7 @@
           <ListValues>
             <Value>F_CPU=32000000L</Value>
             <Value>USB_MAXEP=2</Value>
+            <Value>GBM8_20121212</Value>
             <Value>AVR</Value>
             <Value>NDEBUG</Value>
           </ListValues>
@@ -113,6 +114,7 @@
           <ListValues>
             <Value>F_CPU=32000000L</Value>
             <Value>USB_MAXEP=2</Value>
+            <Value>GBM8_20121212</Value>
             <Value>AVR</Value>
           </ListValues>
         </avrgcc.compiler.symbols.DefSymbols>
@@ -312,9 +314,9 @@
     <Compile Include="usb_support.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="eam.c">
+    <None Include="eam.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="eam.h">
       <SubType>compile</SubType>
     </Compile>
@@ -328,6 +330,36 @@
       <SubType>compile</SubType>
     </None>
     <Compile Include="servo.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="gbm8.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="gbm8.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sbk.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sbk.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="shiftreg.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="shiftreg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="fsz.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="fsz.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="gbm.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="gbm.h">
       <SubType>compile</SubType>
     </Compile>
   </ItemGroup>
