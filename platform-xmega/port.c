@@ -51,8 +51,7 @@ uint16_t pwm_parameter_select;
 
 uint16_t port_do;
 uint16_t port_di;
-uint16_t port_di_mapped;
-uint16_t port_do_mapped;
+uint16_t port_mapped;
 uint16_t port_user;
 uint8_t port_blink_phase;
 uint8_t port_blink_count;
@@ -107,8 +106,8 @@ PROCESS_THREAD(port_process, ev, data)
 
 
 		// Overwrite status bits if dir=1 (LN output)
-		ln_gpio_status[0] = (ln_gpio_status[0]&(~eeprom.ln_gpio_dir[0]))|(((uint8_t) port_di_mapped)&eeprom.ln_gpio_dir[0]);
-		ln_gpio_status[1] = (ln_gpio_status[1]&(~eeprom.ln_gpio_dir[1]))|(((uint8_t) (port_di_mapped>>8))&eeprom.ln_gpio_dir[1]);
+		ln_gpio_status[0] = (ln_gpio_status[0]&(~eeprom.ln_gpio_dir[0]))|(((uint8_t) port_mapped)&eeprom.ln_gpio_dir[0]);
+		ln_gpio_status[1] = (ln_gpio_status[1]&(~eeprom.ln_gpio_dir[1]))|(((uint8_t) (port_mapped>>8))&eeprom.ln_gpio_dir[1]);
 		
 		etimer_reset(&port_timer);
 	}
@@ -185,14 +184,13 @@ void pwm_step(void)
 Offset	Description
 0		port_do
 16		port_di
-32		port_do_mapped
-48		port_di_mapped
-64		port_do & blink
-80		port_do & ~blink
-96		~port_do & blink
-112		~port_do & ~blink
-128		port_user
-144		port_blink_phase
+32		port_mapped
+48		port_do & blink
+64		port_do & ~blink
+80		~port_do & blink
+96		~port_do & ~blink
+112		port_user
+128		port_blink_phase
 */
 uint8_t port_map_get_bit(uint8_t index)
 {
@@ -206,35 +204,31 @@ uint8_t port_map_get_bit(uint8_t index)
 	}
 	else if (index<48)
 	{
-		return port_do_mapped&(1<<(index-32)) ? 1 : 0;
+		return port_mapped&(1<<(index-32)) ? 1 : 0;
 	}
 	else if (index<64)
 	{
-		return port_di_mapped&(1<<(index-48)) ? 1 : 0;
+		return port_do&(1<<(index-48)) ? port_blink_phase&1 : 0;
 	}
 	else if (index<80)
 	{
-		return port_do&(1<<(index-64)) ? port_blink_phase&1 : 0;
+		return port_do&(1<<(index-64)) ? (~port_blink_phase)&1 : 0;
 	}
 	else if (index<96)
 	{
-		return port_do&(1<<(index-80)) ? (~port_blink_phase)&1 : 0;
+		return port_do&(1<<(index-80)) ? 0: port_blink_phase&1;
 	}
 	else if (index<112)
 	{
-		return port_do&(1<<(index-96)) ? 0: port_blink_phase&1;
+		return port_do&(1<<(index-96)) ? 0: (~port_blink_phase)&1;
 	}
 	else if (index<128)
 	{
-		return port_do&(1<<(index-112)) ? 0: (~port_blink_phase)&1;
+		return port_user&(1<<(index-112)) ? 1 : 0;
 	}
-	else if (index<144)
+	else if (index<136)
 	{
-		return port_user&(1<<(index-128)) ? 1 : 0;
-	}
-	else if (index<152)
-	{
-		return port_blink_phase&(1<<(index-144)) ? 1 : 0;
+		return port_blink_phase&(1<<(index-128)) ? 1 : 0;
 	}
 	
 	return 0;
@@ -244,7 +238,6 @@ void port_do_mapping(void)
 {
 	uint8_t index;
 	uint8_t lut_bit;
-	uint16_t status_mapped = 0;
 		
 	// Determine new input or output state
 	for (index=0;index<16;index++)
@@ -253,41 +246,20 @@ void port_do_mapping(void)
 		lut_bit |= port_map_get_bit(eeprom.port_map_mux1[index])? (1<<1) : 0;
 		lut_bit |= port_map_get_bit(eeprom.port_map_mux2[index])? (1<<0) : 0;
 						
-		status_mapped |= (eeprom.port_map_lut[index]&(1<<lut_bit))? (1<<index) : 0;
-	}
-	
-	// Assign inputs and outputs (brightness)
-	for (index=0;index<16;index++)
-	{
-		if ((eeprom.port_map_dir&(1<<index))==0)
+		if (eeprom.port_map_lut[index]&(1<<lut_bit))
 		{
-			if (status_mapped&(1<<index))
+			port_mapped |= (1<<index);
+			if (!(eeprom.port_pwm_enable&(1<<index)))
 			{
-				port_di_mapped |= (1<<index);
-			}
-			else
-			{
-				port_di_mapped &= ~(1<<index);
+				pwm_port[index].dimm_target = eeprom.port_brightness_on[index];
 			}
 		}
 		else
 		{
-			if (status_mapped&(1<<index))
+			port_mapped &= ~(1<<index);
+			if (!(eeprom.port_pwm_enable&(1<<index)))
 			{
-				port_do_mapped |= (1<<index);
-				if (!(eeprom.port_pwm_enable&(1<<index)))
-				{
-					pwm_port[index].dimm_target = eeprom.port_brightness_on[index];
-				}
-			}
-			else
-			{
-				port_do_mapped &= ~(1<<index);
-			
-				if (!(eeprom.port_pwm_enable&(1<<index)))
-				{
-					pwm_port[index].dimm_target = eeprom.port_brightness_off[index];
-				}
+				pwm_port[index].dimm_target = eeprom.port_brightness_off[index];
 			}
 		}
 	}	
