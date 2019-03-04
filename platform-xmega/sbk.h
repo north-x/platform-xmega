@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2017, Manuel Vetterli
+ * Copyright (c) 2019, Manuel Vetterli
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,8 +41,7 @@
  *
  */
 #ifdef AUTOSTART_CFG
-&relay_process,
-&wa2_process,
+//&sbk_process,
 #endif
 
 /*
@@ -52,98 +51,66 @@
  *
  */
 #ifdef SV_CFG
-SV(280, "Servo Multipos Opcode Select", eeprom.servo_multipos_opcode, 0)
-SV(281, "Servo 1 Multipos Off", eeprom.servo_multipos[0][0], 0)
-SV(282, "Servo 1 Multipos On", eeprom.servo_multipos[0][1], 0)
-SV(283, "Servo 2 Multipos Off", eeprom.servo_multipos[1][0], 0)
-SV(284, "Servo 2 Multipos On", eeprom.servo_multipos[1][1], 0)
+SV(351, "SBK In Track", sbk_in_track, sbk_update_track)
+SV(352, "SBK Out Track", sbk_out_track, sbk_update_track)
 #endif
 
 /*
  *	EEPROM Configuration Variable Definition
  */
 #ifdef EEPROM_CFG
-uint8_t servo_multipos_opcode;
-uint8_t servo_multipos[2][2];
-//uint16_t test_config16;
-//uint8_t test_config_array[2];
 #endif
 
 /*
  *	EEPROM Status Variable Definition
  */
 #ifdef EEPROM_STATUS_CFG
-uint8_t relay_request;
 #endif
 
 /*
  *	EEPROM Configuration Variable Default Configuration
  */
 #ifdef EEPROM_DEFAULT
-.servo_multipos_opcode = 0,
-.servo_multipos = {{64, 192}, {64, 192}},
-//.test_config16 = 12345,
-//.test_config_array = {16, 16},
 #endif
 
 /*
  *	EEPROM Status Variable Default Configuration
  */
 #ifdef EEPROM_STATUS_DEFAULT
-.relay_request = 0,
 #endif
-
-/*
- * LN Receive Callback Definition
- *
- * Function to be called when a valid packet was received
- */
-#ifdef LN_RX_CALLBACK
-LN_RX_CALLBACK(ln_throttle_process)
-#endif
-
-/*
- * SV CMD Callback Definition
- *
- * Function to be called when SV#5 is written
- */
-#ifdef SV_CMD_CALLBACK
-SV_CMD_CALLBACK(ln_sv_cmd_callback)
-#endif
-
 
 #else
 /************************************************************************/
 /* Module Header File                                                   */
 /************************************************************************/
-#ifndef wa2_H_
-#define wa2_H_
+#ifndef sbk_H_
+#define sbk_H_
 
+void sbk_init(void);
+void sbk_update_track(void);
+void sbk_in_abort(void);
+void sbk_out_abort(void);
 
-PROCESS_NAME(wa2_process);
-PROCESS_NAME(relay_process);
-void ln_throttle_process(lnMsg *LnPacket);
-void ln_sv_cmd_callback(uint8_t cmd);
+extern volatile uint8_t sbk_mode;
+extern volatile uint8_t sbk_in_track;
+extern volatile uint8_t sbk_out_track;
 
-void relay_governor(void);
+#define SBK_MODE_NORMAL	0
+#define SBK_MODE_FSS	1
 
-void servo_power_enable(void);
-void servo_power_disable(void);
+#define RELAIS_G3_OUT	2
+#define RELAIS_G3_IN	3
+#define RELAIS_G2_OUT	4
+#define RELAIS_G2_IN	5
+#define RELAIS_G1_IN	6
+#define RELAIS_G1_OUT	7
+#define RELAIS_G4_OUT	8
+#define RELAIS_G4_IN	9
+#define RELAIS_FSS		11
+#define RELAIS_G6_OUT	12
+#define RELAIS_G6_IN	13
+#define RELAIS_G5_IN	14
+#define RELAIS_G5_OUT	15
 
-#define PU_SERVO_POWER	0
-#define	PU_RELAY_1		1
-#define PU_RELAY_2		2
-#define PU_RELAY_RC1	3
-#define PU_RELAY_RC2	4
-#define PU_RELAY_RC3	5
-#define PU_RELAY_RC4	6
-
-#define RELAY_CMD_LEFT1		1
-#define RELAY_CMD_RIGHT1	2
-#define RELAY_CMD_LEFT2		4
-#define RELAY_CMD_RIGHT2	8
-#define RELAY_CMD_LEFT		1
-#define RELAY_CMD_RIGHT		2
-
-#endif /* wa2_H_ */
+#endif /* sbk_H_ */
 #endif
