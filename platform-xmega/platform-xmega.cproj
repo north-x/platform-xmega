@@ -330,6 +330,12 @@
     <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
+	<Compile Include="dev\uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\uart.h">
+      <SubType>compile</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev" />

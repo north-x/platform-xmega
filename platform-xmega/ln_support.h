@@ -275,7 +275,10 @@ SV_CMD_CALLBACK(lns_sv_cmd_callback)
 
 #define LN_GPIO_CONFIG_GPON		0
 #define LN_GPIO_CONFIG_STARTUP	1
-#define LN_GPIO_CONFIG_WATCHDOG	7
+#define LN_GPIO_CONFIG_WATCHDOG	2
+#define LN_GPIO_CONFIG_ENABLE_SERIAL 3
+
+#define UART_BAUD_RATE 57142
 
 extern uint8_t ln_gpio_tx[LN_GPIO_BW];
 extern uint8_t ln_gpio_tx_ack[LN_GPIO_BW];
@@ -300,6 +303,7 @@ void ln_trigger_lookup_update(void);
 void ln_update_lookup(void);
 uint8_t getLnMsgChecksum(lnMsg *msg);
 void lns_sv_cmd_callback(uint8_t cmd);
+void sendLocoNetPacketSerial(lnMsg *LnPacket);
 
 PROCESS_NAME(ln_process);
 
