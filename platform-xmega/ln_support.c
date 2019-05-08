@@ -80,11 +80,11 @@ void loconet_init(void)
 	initLnBuf(&LnTxBuffer);
 	initLnBuf(&LnSerialBuffer);
 	
-	initLocoNet(&LnBuffer);
-	lnTxEcho = 0;
-	ACA.CTRLB = ((eeprom.ln_threshold/4)-1)&0x3F;
-	
-	if (eeprom.ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+	if (eeprom.ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_LN))
+	{
+		
+	}
+	else if (eeprom.ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
 	{
 		PORTD.PIN6CTRL = PORT_OPC_PULLUP_gc;
 		PORTD.OUTSET = (1<<7);
@@ -95,6 +95,10 @@ void loconet_init(void)
 	{
 		usb_init();	
 	}
+	
+	initLocoNet(&LnBuffer);
+	lnTxEcho = 0;
+	ACA.CTRLB = ((eeprom.ln_threshold/4)-1)&0x3F;
 	
 	if (eeprom.sv_serial_number==0xFFFF)
 	{

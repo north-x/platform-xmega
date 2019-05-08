@@ -58,13 +58,11 @@ PROCESS_THREAD(gbm8_process, ev, data)
 		if (gbm_version==3)
 		{
 			ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-			ACA.AC1MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
 			eeprom.gbm_mode = GBM_MODE_FSZ;
 		}
 		else if (gbm_version==2)
 		{
 			ACA.AC0MUXCTRL = AC_MUXPOS_PIN5_gc | AC_MUXNEG_SCALER_gc;
-			ACA.AC1MUXCTRL = AC_MUXPOS_PIN5_gc | AC_MUXNEG_SCALER_gc;
 		}
 		
 		update_gbm_mode();
