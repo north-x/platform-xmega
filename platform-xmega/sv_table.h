@@ -78,9 +78,6 @@ void cmd_exec(void)
 		case 3:
 			eeprom_load_defaults();
 			break;
-		case 4:
-			USB_enter_bootloader();
-			break;
 	}
 	
 	#define SV_CMD_CALLBACK(fun) fun(cmd_register);

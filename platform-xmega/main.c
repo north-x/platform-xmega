@@ -66,8 +66,6 @@ void init(void)
 	clock_init();
 	
 	process_start(&etimer_process, NULL);
-	
-	usb_init();
 		
 	PMIC.CTRL = PMIC_LOLVLEN_bm | PMIC_MEDLVLEN_bm | PMIC_HILVLEN_bm;
 	sei();
