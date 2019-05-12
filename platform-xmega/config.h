@@ -37,8 +37,6 @@
 	
 #include "ln_support.h"
 #include "port.h"
-#include "servo.h"
-#include "wa2.h"
 
-#define SOFTWARE_VERSION	2
+#define SOFTWARE_VERSION	0
 #undef CONFIGURATION

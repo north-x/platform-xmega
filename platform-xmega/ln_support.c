@@ -288,15 +288,17 @@ PROCESS_THREAD(ln_process, ev, data)
 			wdt_reset();
 			ln_wdt_flag = 1;
 			
-			if (ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+			if (!(ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_LN)))
 			{
-				sendLocoNetPacketSerial(LnPacket);
+				if (ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+				{
+					sendLocoNetPacketSerial(LnPacket);
+				}
+				else
+				{
+					sendLocoNetPacketUSB(LnPacket);
+				}
 			}
-			else
-			{
-				sendLocoNetPacketUSB(LnPacket);
-			}
-			
 			ln_gpio_process_rx(LnPacket, source);
 			
 			#define LN_RX_CALLBACK(fun) fun(LnPacket);
@@ -337,7 +339,7 @@ PROCESS_THREAD(ln_process, ev, data)
 			lnTxEcho = tmp;
 		}
 		
-		if (ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+		if ((ln_gpio_config&((1<<LN_GPIO_CONFIG_ENABLE_SERIAL)|(1<<LN_GPIO_CONFIG_ENABLE_LN)))==(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
 		{
 			while (1)
 			{
