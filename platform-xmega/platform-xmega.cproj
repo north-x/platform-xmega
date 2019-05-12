@@ -332,7 +332,7 @@
     <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="dev\uart.c">
+	<Compile Include="dev\uart.c">
       <SubType>compile</SubType>
     </Compile>
     <Compile Include="dev\uart.h">
