@@ -312,9 +312,9 @@
     <Compile Include="usb_support.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="eam.c">
+    <Compile Include="eam.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="eam.h">
       <SubType>compile</SubType>
     </Compile>
