@@ -42,6 +42,7 @@
 #include "usb_support.h"
 #include "config.h"
 #include "sys/utils.h"
+#include "dev/uart.h"
 
 PROCESS(ln_process, "Loconet Handler");
 PROCESS(ln_ack_process, "Loconet Ack Handler");
@@ -55,6 +56,7 @@ static process_event_t ln_ack_event;
 
 LnBuf LnBuffer;
 LnBuf LnTxBuffer;
+LnBuf LnSerialBuffer;
 
 uint8_t ln_gpio_tx[LN_GPIO_BW];
 uint8_t ln_gpio_tx_ack[LN_GPIO_BW];
@@ -76,6 +78,23 @@ void loconet_init(void)
 	
 	initLnBuf(&LnBuffer);
 	initLnBuf(&LnTxBuffer);
+	initLnBuf(&LnSerialBuffer);
+	
+	if (eeprom.ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_LN))
+	{
+		
+	}
+	else if (eeprom.ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+	{
+		PORTD.PIN6CTRL = PORT_OPC_PULLUP_gc;
+		PORTD.OUTSET = (1<<7);
+		PORTD.DIRSET = (1<<7);
+		uart_init(UART_BAUD_SELECT(UART_BAUD_RATE,F_CPU));
+	}
+	else
+	{
+		usb_init();	
+	}
 	
 	initLocoNet(&LnBuffer);
 	lnTxEcho = 0;
@@ -213,6 +232,8 @@ PROCESS_THREAD(ln_process, ev, data)
 	lnMsg *LnPacket;
 	uint8_t index;
 	uint8_t source;
+	static uint8_t masterEnabled = 0;
+	static uint8_t ln_gpio_config;
 	
 	// Mimic missing PROCESS_TIMERHANDLER(handler)
 	if ((ev==PROCESS_EVENT_TIMER) /*&& (data==&ln_lookup_timer)*/)
@@ -224,6 +245,9 @@ PROCESS_THREAD(ln_process, ev, data)
 	
 	// Initialization
 	loconet_init();
+	
+	ln_gpio_config = eeprom.ln_gpio_config;
+	
 	for (index=0;index<LN_GPIO_BW;index++)
 	{
 		ln_gpio_status[index] = eeprom_status.ln_gpio_status[index];
@@ -264,11 +288,18 @@ PROCESS_THREAD(ln_process, ev, data)
 			wdt_reset();
 			ln_wdt_flag = 1;
 			
-			sendLocoNetPacketUSB(LnPacket);
-			
+			if (!(ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_LN)))
+			{
+				if (ln_gpio_config&(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+				{
+					sendLocoNetPacketSerial(LnPacket);
+				}
+				else
+				{
+					sendLocoNetPacketUSB(LnPacket);
+				}
+			}
 			ln_gpio_process_rx(LnPacket, source);
-			
-			//ln_throttle_process(LnPacket);
 			
 			#define LN_RX_CALLBACK(fun) fun(LnPacket);
 			#include "config.h"
@@ -282,18 +313,46 @@ PROCESS_THREAD(ln_process, ev, data)
 					ln_gpio_tx[index] = 0xFF;
 				}
 			}
-			/*
-			else if (BootloaderParseMessage(LnPacket)==1)
-			{
-				//BootloaderEnter(); // enter bootloader from running application
-			}*/
 			else
+			{
 				processSVMessage(LnPacket);
+			}
 		}
 		else
 		{
 			ln_gpio_process_tx();
 		}
+		
+		LnPacket = recvLnMsg(&LnSerialBuffer);
+		
+		if (LnPacket)
+		{
+			if (!masterEnabled)
+			{
+				enableLocoNetMaster(1);
+				masterEnabled = 1;
+			}
+
+			uint8_t tmp = lnTxEcho;
+			lnTxEcho = 1;
+			sendLocoNetPacket(LnPacket);
+			lnTxEcho = tmp;
+		}
+		
+		if ((ln_gpio_config&((1<<LN_GPIO_CONFIG_ENABLE_SERIAL)|(1<<LN_GPIO_CONFIG_ENABLE_LN)))==(1<<LN_GPIO_CONFIG_ENABLE_SERIAL))
+		{
+			while (1)
+			{
+				uint16_t rec = uart_getc();
+				if (rec & UART_NO_DATA)
+				{
+					break;
+				}
+				addByteLnBuf(&LnSerialBuffer, (uint8_t) rec);
+			}
+		}
+		
+		PROCESS_PAUSE();
 	}
 	
 	PROCESS_END();
@@ -769,5 +828,16 @@ void lns_sv_cmd_callback(uint8_t cmd)
 		{
 			ln_gpio_tx[index] = 0xFF;
 		}
+	}
+}
+
+void sendLocoNetPacketSerial(lnMsg *LnPacket)
+{
+	uint8_t index, size;
+	size = getLnMsgSize(LnPacket);
+		
+	for (index=0;index<size;index++)
+	{
+		uart_putc(LnPacket->data[index]);
 	}
 }

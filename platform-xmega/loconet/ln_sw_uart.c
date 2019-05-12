@@ -165,30 +165,70 @@ ISR(LN_SB_SIGNAL)
 	lnState |= LN_ST_SB ;
 }
 
+ISR(PORTD_INT0_vect)
+{
+	// Disable startbit detection
+	PORTD.INTCTRL &= ~PORT_INT0LVL_HI_gc;
+	TCE0.CTRLD = TC_EVACT_OFF_gc;
+
+    // Clear the current compare interrupt status bit and enable the compare interrupt
+	TCE0.INTFLAGS = TC0_CCAIF_bm;
+	TCE0.INTCTRLB |= TC_CCAINTLVL_HI_gc;
+
+    // Set the state to indicate that we have started to receive
+	lnState |= LN_ST_SB ;
+}
+
 ISR(TCE0_CCA_vect)
 {
 	// Disable further interrupts
 	TCE0.INTCTRLB &= ~TC_CCAINTLVL_HI_gc;
 	
-	// Sanity check of start bit
-	// If LN is 1 again, then this was just noise
-	if (ACA.STATUS&AC_AC0STATE_bm)
+	if (EVSYS.CH0MUX==EVSYS_CHMUX_ACA_CH0_gc)
 	{
-		// Restore previous state
-		lnState &= ~LN_ST_SB;
-		// Clear the Start Bit Interrupt Status Flag and Enable ready to
-		// detect the next Start Bit
-		// Clear pending interrupts and enable SB detection
-		ACA.STATUS = AC_AC0IF_bm;
-		ACA.AC0CTRL |= AC_INTLVL_HI_gc;
-		TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
-		lnRxBuffer->Stats.RxErrors++;
+		// Sanity check of start bit
+		// If LN is 1 again, then this was just noise
+		if (ACA.STATUS&AC_AC0STATE_bm)
+		{
+			// Restore previous state
+			lnState &= ~LN_ST_SB;
+			// Clear the Start Bit Interrupt Status Flag and Enable ready to
+			// detect the next Start Bit
+			// Clear pending interrupts and enable SB detection
+			ACA.STATUS = AC_AC0IF_bm;
+			ACA.AC0CTRL |= AC_INTLVL_HI_gc;
+			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
+			lnRxBuffer->Stats.RxErrors++;
+		}
+		else
+		{
+			// Prepare ISR to receive byte
+			TCE0.INTFLAGS = TC0_CCCIF_bm;
+			TCE0.INTCTRLB |= TC_CCCINTLVL_HI_gc;
+		}
 	}
 	else
 	{
-		// Prepare ISR to receive byte
-		TCE0.INTFLAGS = TC0_CCCIF_bm;
-		TCE0.INTCTRLB |= TC_CCCINTLVL_HI_gc;
+		// Sanity check of start bit
+		// If LN is 1 again, then this was just noise
+		if (PORTD.IN&(1<<6))
+		{
+			// Restore previous state
+			lnState &= ~LN_ST_SB;
+			// Clear the Start Bit Interrupt Status Flag and Enable ready to
+			// detect the next Start Bit
+			// Clear pending interrupts and enable SB detection
+			PORTD.INTFLAGS = PORT_INT0IF_bm;
+			PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
+			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
+			lnRxBuffer->Stats.RxErrors++;
+		}
+		else
+		{
+			// Prepare ISR to receive byte
+			TCE0.INTFLAGS = TC0_CCCIF_bm;
+			TCE0.INTCTRLB |= TC_CCCINTLVL_HI_gc;
+		}
 	}
 }
 /**************************************************************************
@@ -216,15 +256,29 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		return;
 	}
 	
-	if (ACA.STATUS&AC_AC0STATE_bm)
-		filter_cnt++;
+	if (EVSYS.CH0MUX==EVSYS_CHMUX_ACA_CH0_gc)
+	{
+		if (ACA.STATUS&AC_AC0STATE_bm)
+			filter_cnt++;
 	
-	if (ln_ac_buf[0]&AC_AC0STATE_bm)
-		filter_cnt++;
+		if (ln_ac_buf[0]&AC_AC0STATE_bm)
+			filter_cnt++;
 	
-	if (ln_ac_buf[1]&AC_AC0STATE_bm)
-		filter_cnt++;
-		
+		if (ln_ac_buf[1]&AC_AC0STATE_bm)
+			filter_cnt++;
+	}
+	else
+	{
+		if (PORTD.IN&(1<<6))
+			filter_cnt++;
+	
+		if (ln_ac_buf[0]&(1<<6))
+			filter_cnt++;
+	
+		if (ln_ac_buf[1]&(1<<6))
+			filter_cnt++;
+	}
+	
 	filter_cnt >>= 1;
 	
     // Are we in the RX State
@@ -244,6 +298,8 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		// Clear pending interrupts and enable SB detection
 		ACA.STATUS = AC_AC0IF_bm;
 		ACA.AC0CTRL |= AC_INTLVL_HI_gc;
+		PORTD.INTFLAGS = PORT_INT0IF_bm;
+		PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
 		TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 				
 		// If the Stop bit is not Set then we have a Framing Error
@@ -293,11 +349,6 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 
 			// Begin the Start Bit
 			LN_SW_UART_SET_TX_LOW
-
-			// Get the Current Timer1 Count and Add the offset for the Compare target
-			// added adjustment value for bugfix (Olaf Funke)
-			//lnCompareTarget = LN_TMR_COUNT_REG + LN_TIMER_TX_RELOAD_PERIOD - LN_TIMER_TX_RELOAD_ADJUST; 
-			//LN_TMR_OUTP_CAPT_REG = lnCompareTarget ;
 		}
 		else
 		{
@@ -345,6 +396,8 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 			// detect the next Start Bit
 			ACA.STATUS = AC_AC0IF_bm;
 			ACA.AC0CTRL |= AC_INTLVL_HI_gc;
+			PORTD.INTFLAGS = PORT_INT0IF_bm;
+			PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
 			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 		}
 		else if( lnBitCount >= LN_BACKOFF_MAX )
@@ -359,30 +412,6 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 {
 	lnRxBuffer = RxBuffer;
 	
-	// PORTE 2:RX 3:TX
-	PORTE.PIN3CTRL = PORT_OPC_TOTEM_gc;
-	PORTE.OUTCLR = (1<<3);
-	PORTE.DIRSET = (1<<3);
-	
-	// Set voltage reference
-	ACA.CTRLB = ((2500*10/78*64/3300)-1)&0x3F; // 2.5 V Threshold
-
-	// connect comparators to pins
-	ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-	ACA.AC1MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-
-	// and enable them
-	//AC0 generates event on falling edge
-	ACA.AC0CTRL = AC_ENABLE_bm | AC_INTMODE_FALLING_gc | AC_INTLVL_OFF_gc | AC_HYSMODE_LARGE_gc;
-	//AC1 generates event on rising edge
-	ACA.AC1CTRL = AC_ENABLE_bm | AC_INTMODE_RISING_gc | AC_INTLVL_OFF_gc | AC_HYSMODE_LARGE_gc;
-
-	// clear pending interrupt flags (net free detection)
-	ACA.STATUS = AC_AC0IF_bm | AC_AC1IF_bm;
-
-	EVSYS.CH0MUX = EVSYS_CHMUX_ACA_CH0_gc;
-	EVSYS.CH1MUX = EVSYS_CHMUX_ACA_CH1_gc;
-
 	// Timer E0: Prescaler 8
 	// Event 0 triggers capture used for start bit detection
 	TCE0.PER = LN_BIT_PERIOD;
@@ -393,13 +422,6 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 	TCE0.CCA = LN_BIT_PERIOD/4;
 	TCE0.CCB = LN_BIT_PERIOD/2;
 	TCE0.CCC = 3*LN_BIT_PERIOD/4;
-	
-	// Clear pending interrupts and enable SB detection
-	ACA.STATUS = AC_AC0IF_bm;
-	ACA.AC0CTRL |= AC_INTLVL_HI_gc;
-
-	lnState = LN_ST_IDLE ;
-	lnTxEcho = 1;
 	
 	DMA.CTRL = 0;
 	DMA.CTRL = DMA_RESET_bm;
@@ -430,6 +452,70 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 	DMA.CH1.CTRLA = DMA_CH_BURSTLEN_1BYTE_gc | DMA_CH_SINGLE_bm | DMA_CH_REPEAT_bm;
 	DMA.CH1.CTRLB = 0;
 	
+	if ((USARTD1.CTRLB&USART_RXEN_bm) || (USB.CTRLA&USB_ENABLE_bm))
+	{
+		// PORTE 3:TX
+		PORTE.PIN3CTRL = PORT_OPC_TOTEM_gc;
+		PORTE.OUTCLR = (1<<3);
+		PORTE.DIRSET = (1<<3);
+	
+		// Set voltage reference
+		ACA.CTRLB = ((2500*10/78*64/3300)-1)&0x3F; // 2.5 V Threshold
+
+		// connect comparator to pins
+		ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
+
+		// and enable it
+		//AC0 generates event on falling edge
+		ACA.AC0CTRL = AC_ENABLE_bm | AC_INTMODE_FALLING_gc | AC_INTLVL_OFF_gc | AC_HYSMODE_LARGE_gc;
+
+		// Event channel 0 is used to restart the timer and control the sampling
+		EVSYS.CH0MUX = EVSYS_CHMUX_ACA_CH0_gc;
+		
+		// Clear pending interrupts and enable SB detection
+		ACA.STATUS = AC_AC0IF_bm;
+		ACA.AC0CTRL |= AC_INTLVL_HI_gc;
+	}
+	else
+	{
+		// PORTE 3:TX
+		PORTE.PIN3CTRL = PORT_OPC_TOTEM_gc | PORT_ISC_LEVEL_gc;
+		PORTE.OUTCLR = (1<<3);
+		PORTE.DIRSET = (1<<3);
+		
+		// PORTD 6:RX 7:TX
+		PORTD.PIN7CTRL = PORT_OPC_TOTEM_gc;
+		PORTD.OUTCLR = (1<<7);
+		PORTD.DIRSET = (1<<7);
+		
+		PORTD.PIN6CTRL = PORT_OPC_PULLUP_gc | PORT_ISC_FALLING_gc;
+		PORTD.INT0MASK = (1<<6);
+		
+		// Clear pending interrupts and enable SB detection
+		PORTD.INTFLAGS = PORT_INT0IF_bm;
+		PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
+		
+		// Event channel 0 is used to restart the timer and control the sampling
+		EVSYS.CH0MUX = EVSYS_CHMUX_PORTD_PIN6_gc;
+		
+		// Event channel 1 is used to route the TX signal from PE3 to PD7
+		// This trick is needed because otherwise the state of PD7 is constantly overwritten by the PWM)
+		EVSYS.CH1MUX = EVSYS_CHMUX_PORTE_PIN3_gc;
+		PORTCFG.EVOUTSEL = PORTCFG_EVOUTSEL_1_gc;
+		PORTCFG.CLKEVOUT = PORTCFG_EVOUT_PD7_gc;
+
+		DMA.CH0.SRCADDR0 = (((uint16_t)(&PORTD_IN))>>0*8) & 0xFF;
+		DMA.CH0.SRCADDR1 = (((uint16_t)(&PORTD_IN))>>1*8) & 0xFF;
+		DMA.CH0.SRCADDR2 = 0;
+
+		DMA.CH1.SRCADDR0 = (((uint16_t)(&PORTD_IN))>>0*8) & 0xFF;
+		DMA.CH1.SRCADDR1 = (((uint16_t)(&PORTD_IN))>>1*8) & 0xFF;
+		DMA.CH1.SRCADDR2 = 0;
+	}
+	
+	lnState = LN_ST_IDLE ;
+	lnTxEcho = 1;
+		
 	DMA.CTRL = DMA_ENABLE_bm;
 	
 	DMA.CH0.CTRLA |= DMA_CH_ENABLE_bm;
@@ -482,24 +568,47 @@ LN_STATUS sendLocoNetPacketTry(lnMsg *TxData, unsigned char ucPrioDelay)
 	if( lnState != LN_ST_IDLE )
 		return LN_NETWORK_BUSY;  // neither idle nor backoff -> busy
 
-	// We need to do this with interrupts off.
-	// The last time we check for free net until sending our start bit
-	// must be as short as possible, not interrupted.
-	cli() ;
-	// Before we do anything else - Disable StartBit Interrupt
-	ACA.AC0CTRL &= ~AC_INTLVL_HI_gc;
-	if (ACA.STATUS&AC_AC0IF_bm)
+	if (EVSYS.CH0MUX==EVSYS_CHMUX_ACA_CH0_gc)
 	{
-		// first we disabled it, than before sending the start bit, we found out
-		// that somebody was faster by examining the start bit interrupt request flag
-		ACA.AC0CTRL |= AC_INTLVL_HI_gc;
-		sei() ;  // receive now what our rival is sending
-		return LN_NETWORK_BUSY;
+		// We need to do this with interrupts off.
+		// The last time we check for free net until sending our start bit
+		// must be as short as possible, not interrupted.
+		cli() ;
+		// Before we do anything else - Disable StartBit Interrupt
+		ACA.AC0CTRL &= ~AC_INTLVL_HI_gc;
+		if (ACA.STATUS&AC_AC0IF_bm)
+		{
+			// first we disabled it, than before sending the start bit, we found out
+			// that somebody was faster by examining the start bit interrupt request flag
+			ACA.AC0CTRL |= AC_INTLVL_HI_gc;
+			sei() ;  // receive now what our rival is sending
+			return LN_NETWORK_BUSY;
+		}
+		
+		TCE0.CTRLD = TC_EVACT_OFF_gc;
+		LN_SW_UART_SET_TX_LOW        // Begin the Start Bit
+	}
+	else
+	{
+		// We need to do this with interrupts off.
+		// The last time we check for free net until sending our start bit
+		// must be as short as possible, not interrupted.
+		cli() ;
+		// Before we do anything else - Disable StartBit Interrupt
+		PORTD.INTCTRL &= ~PORT_INT0LVL_HI_gc;
+		if (PORTD.INTFLAGS&PORT_INT0IF_bm)
+		{
+			// first we disabled it, than before sending the start bit, we found out
+			// that somebody was faster by examining the start bit interrupt request flag
+			PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
+			sei() ;  // receive now what our rival is sending
+			return LN_NETWORK_BUSY;
+		}
+		
+		TCE0.CTRLD = TC_EVACT_OFF_gc;
+		LN_SW_UART_SET_TX_LOW        // Begin the Start Bit
 	}
 	
-	TCE0.CTRLD = TC_EVACT_OFF_gc;
-	LN_SW_UART_SET_TX_LOW        // Begin the Start Bit
-
 	// Get the Current Timer1 Count and Add the offset for the Compare target
 	// added adjustment value for bugfix (Olaf Funke)
 	TCE0.CNT = TCE0.CCC + LN_TIMER_TX_RELOAD_ADJUST;

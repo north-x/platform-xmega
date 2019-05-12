@@ -138,11 +138,11 @@ PROCESS_THREAD(wa2_process, ev, data)
 			// Turn on relay if position greater than 127
 			if (servo[1].position_actual>127)
 			{
-				relay_request |= (1<<1);
+				port_user |= (1<<PU_RELAY2_REQ);
 			}
 			else
 			{
-				relay_request &= ~(1<<1);
+				port_user &= ~(1<<PU_RELAY2_REQ);
 			}
 			
 			// If we reached the final position, transmit the new status
@@ -167,11 +167,11 @@ PROCESS_THREAD(wa2_process, ev, data)
 			// Turn on relay if position greater than 127
 			if (servo[1].position_actual>127)
 			{
-				relay_request |= (1<<1);
+				port_user |= (1<<PU_RELAY2_REQ);
 			}
 			else
 			{
-				relay_request &= ~(1<<1);
+				port_user &= ~(1<<PU_RELAY2_REQ);
 			}
 			
 			// If we reached the final position, transmit a switch report
@@ -807,4 +807,13 @@ void port_update_mapping(void)
 	port[2][0] = pwm_port[12].pwm_current;
 	port[2][1] = pwm_port[13].pwm_current;
 	port[0][5] = pwm_port[14].pwm_current;
+	
+	if (port_mapped&(1<<15))
+	{
+		relay_request |= (1<<1);
+	}
+	else
+	{
+		relay_request &= ~(1<<1);
+	}
 }
