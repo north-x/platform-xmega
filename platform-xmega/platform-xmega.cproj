@@ -318,15 +318,15 @@
     <Compile Include="eam.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="wa2.c">
+    <None Include="wa2.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="wa2.h">
       <SubType>compile</SubType>
     </Compile>
-    <Compile Include="servo.c">
+    <None Include="servo.c">
       <SubType>compile</SubType>
-    </Compile>
+    </None>
     <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
