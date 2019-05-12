@@ -332,6 +332,12 @@
     <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
+    <Compile Include="dev\uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\uart.h">
+      <SubType>compile</SubType>
+    </Compile>
     <Compile Include="gbm8.h">
       <SubType>compile</SubType>
     </Compile>

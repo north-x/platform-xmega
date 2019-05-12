@@ -65,8 +65,6 @@ SV(284, "Servo 2 Multipos On", eeprom.servo_multipos[1][1], 0)
 #ifdef EEPROM_CFG
 uint8_t servo_multipos_opcode;
 uint8_t servo_multipos[2][2];
-//uint16_t test_config16;
-//uint8_t test_config_array[2];
 #endif
 
 /*
@@ -82,8 +80,6 @@ uint8_t relay_request;
 #ifdef EEPROM_DEFAULT
 .servo_multipos_opcode = 0,
 .servo_multipos = {{64, 192}, {64, 192}},
-//.test_config16 = 12345,
-//.test_config_array = {16, 16},
 #endif
 
 /*
@@ -137,6 +133,7 @@ void servo_power_disable(void);
 #define PU_RELAY_RC2	4
 #define PU_RELAY_RC3	5
 #define PU_RELAY_RC4	6
+#define PU_RELAY2_REQ	7
 
 #define RELAY_CMD_LEFT1		1
 #define RELAY_CMD_RIGHT1	2
