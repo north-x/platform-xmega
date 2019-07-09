@@ -51,6 +51,7 @@ uint16_t pwm_parameter_select;
 
 uint16_t port_do;
 uint16_t port_di;
+uint16_t port_di_pre;
 uint16_t port_mapped;
 uint16_t port_user;
 uint8_t port_blink_phase;
@@ -81,6 +82,7 @@ PROCESS_THREAD(port_process, ev, data)
 	while(1)
 	{
 		PROCESS_YIELD();
+		port_di_pre = port_di;
 		// DI (digital input) handling
 		in = port_pin_status();
 
@@ -119,12 +121,14 @@ void port_update_configuration(void)
 {	
 	port_di_init();
 	pwm_init();
+	port_di_pre = port_di;
 }
 
 void port_init(void)
 {	
 	port_di_init();
 	pwm_init();
+	port_di_pre = port_di;
 }
 
 void pwm_step(void)
@@ -191,6 +195,8 @@ Offset	Description
 96		~port_do & ~blink
 112		port_user
 128		port_blink_phase
+136		port_di rising
+152		port_di falling
 */
 uint8_t port_map_get_bit(uint8_t index)
 {
@@ -229,6 +235,14 @@ uint8_t port_map_get_bit(uint8_t index)
 	else if (index<136)
 	{
 		return port_blink_phase&(1<<(index-128)) ? 1 : 0;
+	}
+	else if (index<152)
+	{
+		return port_di&(~port_di_pre)&(1<<(index-136)) ? 1 : 0;
+	}
+	else if (index<168)
+	{
+		return port_di_pre&(~port_di)&(1<<(index-152)) ? 1 : 0;
 	}
 	
 	return 0;

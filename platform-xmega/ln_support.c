@@ -395,6 +395,7 @@ void ln_gpio_process_tx(void)
 				}
 				else
 				{
+					ln_gpio_status_flag[current_channel/8] |= (1<<(current_channel%8));
 					ln_gpio_status_pre[current_channel/8] |= (1<<(current_channel%8));
 					ln_gpio_tx[current_channel/8] &= ~(1<<(current_channel%8));
 				}
@@ -422,6 +423,7 @@ void ln_gpio_process_tx(void)
 				}
 				else
 				{
+					ln_gpio_status_flag[current_channel/8] |= (1<<(current_channel%8));
 					ln_gpio_status_pre[current_channel/8] &= ~(1<<(current_channel%8));
 					ln_gpio_tx[current_channel/8] &= ~(1<<(current_channel%8));
 				}
