@@ -129,6 +129,7 @@ void port_init(void)
 	port_di_init();
 	pwm_init();
 	port_di_pre = port_di;
+	port_mapped = (ln_gpio_status[0]&eeprom.ln_gpio_dir[0]) | ((ln_gpio_status[1]&eeprom.ln_gpio_dir[1])<<8);
 }
 
 void pwm_step(void)

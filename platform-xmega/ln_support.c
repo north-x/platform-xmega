@@ -74,6 +74,7 @@ extern uint16_t deviceID;
 
 void loconet_init(void)
 {
+	uint8_t eeprom_update_needed = 0;
 	ln_update_lookup();
 	
 	initLnBuf(&LnBuffer);
@@ -103,19 +104,24 @@ void loconet_init(void)
 	if (eeprom.sv_serial_number==0xFFFF)
 	{
 		eeprom.sv_serial_number = deviceID;
-		ln_update_lookup();
+		eeprom_update_needed = 1;
+	}
+	
+	if (eeprom.sv_destination_id==0xFFFF)
+	{
+		eeprom.sv_destination_id = deviceID;
+		eeprom_update_needed = 1;
+	}
+	
+	if (eeprom_update_needed)
+	{
 		eeprom_sync_storage();
 		
 		// Issue a software reset
 		CCP = CCP_IOREG_gc;
 		RST.CTRL = RST_SWRST_bm;
 	}
-	
-	if (readSVDestinationId()==0xFFFF)
-	{
-		writeSVDestinationId(deviceID);
-	}
-	
+		
 	ln_ack_event = process_alloc_event();
 	process_start(&ln_ack_process, NULL);
 	

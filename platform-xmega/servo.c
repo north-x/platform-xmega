@@ -29,17 +29,17 @@
  * OF THE POSSIBILITY OF SUCH DAMAGE.
  */ 
 
+#if defined(__AVR__)
+#include <avr/io.h>
+#include <avr/interrupt.h>
+#endif
+
 #include <stdio.h>
 #include <stdint.h>
 #include <string.h>
 #include "sys/process.h"
 #include "eeprom.h"
 #include "servo.h"
-
-#if defined(__AVR__)
-#include <avr/io.h>
-#include <avr/interrupt.h>
-#endif
 
 #if defined(__18CXX) || defined(__AVR__)
 #define DBG(...)
@@ -319,6 +319,9 @@ PROCESS_THREAD(servo_process, ev, data)
 					servo_timer = 0xFF;
 				else
 					servo_timer = eeprom.servo_timeout;
+				
+				// Enable eeprom update after timer elapsed
+				servo_status |= 1<<SERVO_STATUS_TRIG_EEPROM_WRITE;
 			}
 		}
 					
@@ -333,9 +336,13 @@ PROCESS_THREAD(servo_process, ev, data)
 				if (!(servo_status&(1<<SERVO_STATUS_PWR_ALWAYS_ON)) && !(servo[0].status&(1<<ST_BIT_MOVING)) && !(servo[1].status&(1<<ST_BIT_MOVING)))
 					servo_status &= ~((1<<SERVO_STATUS_PWR)|(1<<SERVO_STATUS_PWR_TEST));
 							
-				eeprom_status.servo_position[0] = servo[0].position_setpoint;
-				eeprom_status.servo_position[1] = servo[1].position_setpoint;
-				eeprom_sync_status();
+				if (servo_status&(1<<SERVO_STATUS_TRIG_EEPROM_WRITE))
+				{
+					eeprom_status.servo_position[0] = servo[0].position_setpoint;
+					eeprom_status.servo_position[1] = servo[1].position_setpoint;
+					eeprom_sync_status();
+					servo_status &= ~(1<<SERVO_STATUS_TRIG_EEPROM_WRITE);
+				}
 			}
 		}
 		

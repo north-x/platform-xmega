@@ -96,7 +96,6 @@ word readSVDestinationId(void)
 word writeSVDestinationId(word usId)
 {
 	eeprom.sv_destination_id = usId;
-	eeprom_shadow.sv_destination_id = usId;
-	eeprom_update_word(&eeprom_eemem.sv_destination_id, usId);
+	eeprom_sync_storage();
 	return 0;
 }

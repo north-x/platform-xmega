@@ -788,6 +788,18 @@ void port_di_init(void)
 	
 	// Initial key state
 	port_di = port_pin_status();
+	
+	// Restore command bits of relay 2
+	if (eeprom_status.relay_request&(1<<1))
+	{
+		port_mapped |= (1<<15);
+		port_user |= (1<<PU_RELAY2_REQ);
+	}
+	else
+	{
+		port_mapped &= ~(1<<15);
+		port_user &= ~(1<<PU_RELAY2_REQ);
+	}
 }
 
 void port_update_mapping(void)
