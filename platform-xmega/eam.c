@@ -121,7 +121,7 @@ uint16_t port_pin_status(void)
 
 void port_di_init(void)
 {
-	if (eeprom.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
+	if (eeprom.data.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
 	{
 		PORTB.PIN2CTRL = PORT_OPC_PULLUP_gc;
 		PORTB.PIN3CTRL = PORT_OPC_PULLUP_gc;
@@ -164,23 +164,23 @@ void port_di_init(void)
 		PORTD.PIN5CTRL = PORT_OPC_TOTEM_gc;
 	}
 	
-	MAP_BITS(eeprom.port_dir, PORTB.DIR, 0, 2);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 1, 2);
-	MAP_BITS(eeprom.port_dir, PORTB.DIR, 2, 3);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 3, 3);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 4, 0);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 5, 4);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 6, 1);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 7, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTB.DIR, 0, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 1, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTB.DIR, 2, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 3, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 4, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 5, 4);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 6, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 7, 5);
 	
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 8, 6);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 9, 2);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 10, 7);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 11, 3);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 12, 0);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 13, 4);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 14, 1);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 15, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 8, 6);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 9, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 10, 7);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 11, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 12, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 13, 4);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 14, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 15, 5);
 	
 	// Initial key state
 	port_di = port_pin_status();

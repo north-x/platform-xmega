@@ -56,8 +56,7 @@ void init(void)
 {
 	USB_ConfigureClock();
 	
-	eeprom_load_status();
-	eeprom_load_storage();
+	eeprom_init();
 
 	deviceID = getID16();
 	srand(deviceID);

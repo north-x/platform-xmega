@@ -48,9 +48,9 @@ uint8_t cmd_register = 0;
 
 SV_TABLE_BEGIN()
 SV_CONST(1, "EEPROM Size", 0)
-SV(2, "SW Version", eeprom.salt, 0)
-SV_LSB(3, "Serial Number L", eeprom.sv_serial_number, 0)
-SV_MSB(4, "Serial Number H", eeprom.sv_serial_number, 0)
+SV(2, "SW Version", eeprom.data.version, 0)
+SV_LSB(3, "Serial Number L", eeprom.data.sv_serial_number, 0)
+SV_MSB(4, "Serial Number H", eeprom.data.sv_serial_number, 0)
 SV(5, "Command Register", cmd_register, cmd_exec)
 
 #define SV_CFG
@@ -78,6 +78,19 @@ void cmd_exec(void)
 		case 3:
 			eeprom_load_defaults();
 			break;
+		case 250:
+			cmd_register = eeprom.info.magic;
+			return;
+		case 251:
+			cmd_register = eeprom.info.version;
+			return;
+		case 252:
+			cmd_register = eeprom_status.info.magic;
+			return;
+		case 253:
+			cmd_register = eeprom_status.info.version;
+			return;
+
 	}
 	
 	#define SV_CMD_CALLBACK(fun) fun(cmd_register);

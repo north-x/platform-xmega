@@ -108,8 +108,8 @@ PROCESS_THREAD(port_process, ev, data)
 
 
 		// Overwrite status bits if dir=1 (LN output)
-		ln_gpio_status[0] = (ln_gpio_status[0]&(~eeprom.ln_gpio_dir[0]))|(((uint8_t) port_mapped)&eeprom.ln_gpio_dir[0]);
-		ln_gpio_status[1] = (ln_gpio_status[1]&(~eeprom.ln_gpio_dir[1]))|(((uint8_t) (port_mapped>>8))&eeprom.ln_gpio_dir[1]);
+		ln_gpio_status[0] = (ln_gpio_status[0]&(~eeprom.data.ln_gpio_dir[0]))|(((uint8_t) port_mapped)&eeprom.data.ln_gpio_dir[0]);
+		ln_gpio_status[1] = (ln_gpio_status[1]&(~eeprom.data.ln_gpio_dir[1]))|(((uint8_t) (port_mapped>>8))&eeprom.data.ln_gpio_dir[1]);
 		
 		etimer_reset(&port_timer);
 	}
@@ -129,7 +129,7 @@ void port_init(void)
 	port_di_init();
 	pwm_init();
 	port_di_pre = port_di;
-	port_mapped = (ln_gpio_status[0]&eeprom.ln_gpio_dir[0]) | ((ln_gpio_status[1]&eeprom.ln_gpio_dir[1])<<8);
+	port_mapped = (ln_gpio_status[0]&eeprom.data.ln_gpio_dir[0]) | ((ln_gpio_status[1]&eeprom.data.ln_gpio_dir[1])<<8);
 }
 
 void pwm_step(void)
@@ -140,9 +140,9 @@ void pwm_step(void)
 	{
 		if ((pwm_update_trig&(1<<index))!=0)
 		{
-			pwm_port[index].dimm_delta = eeprom.pwm_delta[index];
+			pwm_port[index].dimm_delta = eeprom.data.pwm_delta[index];
 			pwm_port[index].dimm_target = pwm_target[index];
-			if (!(eeprom.port_config&(1<<PORT_MODE_PWM_UPDATE_CONT))) {
+			if (!(eeprom.data.port_config&(1<<PORT_MODE_PWM_UPDATE_CONT))) {
 				pwm_update_trig &= ~(1<<index);			
 			}
 		}
@@ -257,24 +257,24 @@ void port_do_mapping(void)
 	// Determine new input or output state
 	for (index=0;index<16;index++)
 	{
-		lut_bit  = port_map_get_bit(eeprom.port_map_mux0[index])? (1<<2) : 0;
-		lut_bit |= port_map_get_bit(eeprom.port_map_mux1[index])? (1<<1) : 0;
-		lut_bit |= port_map_get_bit(eeprom.port_map_mux2[index])? (1<<0) : 0;
+		lut_bit  = port_map_get_bit(eeprom.data.port_map_mux0[index])? (1<<2) : 0;
+		lut_bit |= port_map_get_bit(eeprom.data.port_map_mux1[index])? (1<<1) : 0;
+		lut_bit |= port_map_get_bit(eeprom.data.port_map_mux2[index])? (1<<0) : 0;
 						
-		if (eeprom.port_map_lut[index]&(1<<lut_bit))
+		if (eeprom.data.port_map_lut[index]&(1<<lut_bit))
 		{
 			port_mapped |= (1<<index);
-			if (!(eeprom.port_pwm_enable&(1<<index)))
+			if (!(eeprom.data.port_pwm_enable&(1<<index)))
 			{
-				pwm_port[index].dimm_target = eeprom.port_brightness_on[index];
+				pwm_port[index].dimm_target = eeprom.data.port_brightness_on[index];
 			}
 		}
 		else
 		{
 			port_mapped &= ~(1<<index);
-			if (!(eeprom.port_pwm_enable&(1<<index)))
+			if (!(eeprom.data.port_pwm_enable&(1<<index)))
 			{
-				pwm_port[index].dimm_target = eeprom.port_brightness_off[index];
+				pwm_port[index].dimm_target = eeprom.data.port_brightness_off[index];
 			}
 		}
 	}	
@@ -287,7 +287,7 @@ void pwm_init(void)
 	// Load settings from EEPROM
 	for (index=0;index<PWM_PORT_COUNT;index++)
 	{
-		pwm_port[index].dimm_delta = eeprom.pwm_delta[index];
+		pwm_port[index].dimm_delta = eeprom.data.pwm_delta[index];
 	}
 
 	pwm_update_bitslices();

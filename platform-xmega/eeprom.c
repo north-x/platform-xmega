@@ -32,23 +32,21 @@
 #include <stdint.h>
 #include <string.h>
 #include <stdio.h>
-#include <avr/eeprom.h>
+#include <avr/io.h>
 #include <avr/pgmspace.h>
 #include <util/crc16.h>
 
 #include "config.h"
 #include "eeprom.h"
 
-t_eeprom_storage eeprom;
-t_eeprom_storage_aligned eeprom_shadow;
-t_eeprom_storage_aligned eeprom_eemem[EEPROM_STORAGE_ENTRY_COUNT] EEMEM;
-t_eeprom_status eeprom_status;
-t_eeprom_status_aligned eeprom_status_shadow;
-t_eeprom_status_aligned eeprom_status_eemem[EEPROM_STATUS_ENTRY_COUNT] EEMEM;
+t_eeprom_storage_aligned eeprom;
+t_eeprom_storage_aligned eeprom_eemem[EEPROM_STORAGE_ENTRY_COUNT] __attribute__((section(".eeprom")));
+t_eeprom_status_aligned eeprom_status;
+t_eeprom_status_aligned eeprom_status_eemem[EEPROM_STATUS_ENTRY_COUNT] __attribute__((section(".eeprom")));
 
 const t_eeprom_default eeprom_default PROGMEM = {
 	.eeprom = {
-				.salt = SOFTWARE_VERSION,
+				.version = SOFTWARE_VERSION,
 				.sv_serial_number = 0xFFFF,
 				.sv_destination_id = 0xFFFF,
 	#define EEPROM_DEFAULT
@@ -64,29 +62,102 @@ const t_eeprom_default eeprom_default PROGMEM = {
 		}
 };
 
+void eeprom_init(void)
+{
+	while (NVM.STATUS&NVM_NVMBUSY_bm);
+	
+	NVM.CTRLB |= NVM_EEMAPEN_bm;
+	
+	eeprom_load_status();
+	eeprom_load_storage();
+}
+
+uint16_t eeprom_checksum(const void *data, uint16_t length)
+{
+	uint16_t crc = 0;
+	size_t index = 0;
+	
+	for (index=0;index<length;index++)
+	{
+		crc = _crc_xmodem_update(crc, ((uint8_t *) data)[index]);
+	}
+	
+	return crc;
+}
+
+void eeprom_write_block(const void *src, void *dst, uint16_t length)
+{
+	uint8_t remainder = 0;
+	uint16_t srcIndex = (uint16_t) src;
+	uint16_t dstIndex = (uint16_t) dst;
+
+	while (NVM.STATUS&NVM_NVMBUSY_bm);
+	
+	while (length)
+	{
+		*(uint8_t *)((uint16_t)dstIndex++ + MAPPED_EEPROM_START) = *(uint8_t*)srcIndex++;
+		
+		remainder = dstIndex % EEPROM_PAGE_SIZE;
+
+		if (remainder==0)
+		{
+			eeprom_write_page(dstIndex-1);
+			while (NVM.STATUS&NVM_NVMBUSY_bm);
+		}
+
+		length--;
+	}
+
+	if (remainder!=0)
+	{
+		eeprom_write_page(dstIndex-1);
+	}	
+}
+
+inline void eeprom_write_page(uint16_t addr)
+{
+	while (NVM.STATUS&NVM_NVMBUSY_bm);
+	
+	NVM.ADDR0 = addr&0xFF;
+	NVM.ADDR1 = (addr>>8)&0x1F;
+	NVM.ADDR2 = 0x00;
+
+	NVM.CMD   = NVM_CMD_ERASE_WRITE_EEPROM_PAGE_gc;
+
+	CCP = CCP_IOREG_gc;
+	NVM.CTRLA = NVM_CMDEX_bm;
+}
+
+inline void * eeprom_read_block(void *dst, void *src, uint16_t length)
+{
+	return memcpy(dst, (uint8_t *)(uint16_t)src + MAPPED_EEPROM_START, length);
+}
+
 void eeprom_load_status(void)
 {
 	uint8_t index;
 	int8_t best_index = -1;
 	uint8_t best_version = 0xFF;
 	
+	while (NVM.STATUS&NVM_NVMBUSY_bm);
+	
 	for (index=0;index<EEPROM_STATUS_ENTRY_COUNT;index++)
 	{
 		// Read info header
-		eeprom_read_block(&eeprom_status_shadow.info, &eeprom_status_eemem[index].info, sizeof(t_eeprom_info));
+		eeprom_read_block(&eeprom_status.info, &eeprom_status_eemem[index].info, sizeof(t_eeprom_info));
 		
 		// Check if there is any data
-		if (eeprom_status_shadow.info.magic!=EEPROM_MAGIC_BYTE)
+		if (eeprom_status.info.magic!=EEPROM_MAGIC_BYTE)
 		{
 			continue;
 		}
 		
 		// Read complete eeprom structure
-		eeprom_read_block(&eeprom_status_shadow.eeprom, &eeprom_status_eemem[index].eeprom, sizeof(t_eeprom_status));
+		eeprom_read_block(&eeprom_status.data, &eeprom_status_eemem[index].data, sizeof(t_eeprom_status));
 		
 		// Calculate checksum and compare to stored one
-		uint16_t checksum = eeprom_status_checksum();
-		if (eeprom_status_shadow.info.checksum!=checksum)
+		uint16_t checksum = eeprom_checksum(&eeprom_status.data, sizeof(t_eeprom_status));
+		if (eeprom_status.info.checksum!=checksum)
 		{
 			continue;
 		}
@@ -95,16 +166,16 @@ void eeprom_load_status(void)
 		if (best_index<0)
 		{
 			best_index = index;
-			best_version = eeprom_status_shadow.info.version;
+			best_version = eeprom_status.info.version;
 		}
 		else
 		{
 			// Check if version is newer than best_version
-			if (((eeprom_status_shadow.info.version < best_version) && (best_version - eeprom_status_shadow.info.version) > 128)
-			|| ((eeprom_status_shadow.info.version > best_version) && (eeprom_status_shadow.info.version - best_version) < 128))
+			if (((eeprom_status.info.version < best_version) && (best_version - eeprom_status.info.version) > 128)
+			|| ((eeprom_status.info.version > best_version) && (eeprom_status.info.version - best_version) < 128))
 			{
 				best_index = index;
-				best_version = eeprom_status_shadow.info.version;
+				best_version = eeprom_status.info.version;
 			}
 		}
 	}
@@ -112,20 +183,18 @@ void eeprom_load_status(void)
 	if (best_index<0)
 	{
 		// No valid config found --> load default
-		memcpy_P(&eeprom_status_shadow.eeprom, &eeprom_default.eeprom_status, sizeof(t_eeprom_status));
-		eeprom_status_shadow.info.checksum = eeprom_status_checksum();
-		eeprom_status_shadow.info.magic = EEPROM_MAGIC_BYTE;
-		eeprom_status_shadow.info.version = 0;
-		eeprom_update_block(&eeprom_status_shadow, &eeprom_status_eemem[0], sizeof(t_eeprom_status_aligned));
-		memcpy(&eeprom_status, &eeprom_status_shadow.eeprom, sizeof(t_eeprom_status));
-		eeprom_status_shadow.info.magic = 0;
+		memcpy_P(&eeprom_status.data, &eeprom_default.eeprom_status, sizeof(t_eeprom_status));
+		eeprom_status.info.checksum = eeprom_checksum(&eeprom_status.data, sizeof(t_eeprom_status));
+		eeprom_status.info.magic = EEPROM_MAGIC_BYTE;
+		eeprom_status.info.version = 0;
+		eeprom_write_block(&eeprom_status, &eeprom_status_eemem[0], sizeof(t_eeprom_status_aligned));
+		eeprom_status.info.magic = 0;
 	}
 	else
 	{
 		// Load best config into RAM
-		eeprom_read_block(&eeprom_status_shadow, &eeprom_status_eemem[best_index], sizeof(t_eeprom_status_aligned));
-		memcpy(&eeprom_status, &eeprom_status_shadow.eeprom, sizeof(t_eeprom_status));
-		eeprom_status_shadow.info.magic = best_index;
+		eeprom_read_block(&eeprom_status, &eeprom_status_eemem[best_index], sizeof(t_eeprom_status_aligned));
+		eeprom_status.info.magic = best_index;
 	}
 }
 
@@ -135,23 +204,25 @@ void eeprom_load_storage(void)
 	int8_t best_index = -1;
 	uint8_t best_version = 0xFF;
 	
+	while (NVM.STATUS&NVM_NVMBUSY_bm);
+	
 	for (index=0;index<EEPROM_STORAGE_ENTRY_COUNT;index++)
 	{
 		// Read info header
-		eeprom_read_block(&eeprom_shadow.info, &eeprom_eemem[index].info, sizeof(t_eeprom_info));
+		eeprom_read_block(&eeprom.info, &eeprom_eemem[index].info, sizeof(t_eeprom_info));
 		
 		// Check if there is any data
-		if (eeprom_shadow.info.magic!=EEPROM_MAGIC_BYTE)
+		if (eeprom.info.magic!=EEPROM_MAGIC_BYTE)
 		{
 			continue;
 		}
 		
 		// Read complete eeprom structure
-		eeprom_read_block(&eeprom_shadow.eeprom, &eeprom_eemem[index].eeprom, sizeof(t_eeprom_storage));
+		eeprom_read_block(&eeprom.data, &eeprom_eemem[index].data, sizeof(t_eeprom_storage));
 		
 		// Calculate checksum and compare to stored one
-		uint16_t checksum = eeprom_checksum();
-		if (eeprom_shadow.info.checksum!=checksum)
+		uint16_t checksum = eeprom_checksum(&eeprom.data, sizeof(t_eeprom_storage));
+		if (eeprom.info.checksum!=checksum)
 		{
 			continue;
 		}
@@ -160,16 +231,16 @@ void eeprom_load_storage(void)
 		if (best_index<0)
 		{
 			best_index = index;
-			best_version = eeprom_shadow.info.version;
+			best_version = eeprom.info.version;
 		}
 		else
 		{
 			// Check if version is newer than best_version
-			if (((eeprom_shadow.info.version < best_version) && (best_version - eeprom_shadow.info.version) > 128)
-			|| ((eeprom_shadow.info.version > best_version) && (eeprom_shadow.info.version - best_version) < 128))
+			if (((eeprom.info.version < best_version) && (best_version - eeprom.info.version) > 128)
+			|| ((eeprom.info.version > best_version) && (eeprom.info.version - best_version) < 128))
 			{
 				best_index = index;
-				best_version = eeprom_shadow.info.version;
+				best_version = eeprom.info.version;
 			}
 		}
 	}
@@ -177,83 +248,55 @@ void eeprom_load_storage(void)
 	if (best_index<0)
 	{
 		// No valid config found --> load default
-		memcpy_P(&eeprom_shadow.eeprom, &eeprom_default.eeprom, sizeof(t_eeprom_storage));
-		eeprom_shadow.info.checksum = eeprom_checksum();
-		eeprom_shadow.info.magic = EEPROM_MAGIC_BYTE;
-		eeprom_shadow.info.version = 0;
-		eeprom_update_block(&eeprom_shadow, &eeprom_eemem[0], sizeof(t_eeprom_storage_aligned));
-		memcpy(&eeprom, &eeprom_shadow.eeprom, sizeof(t_eeprom_storage));
-		eeprom_shadow.info.magic = 0;
+		memcpy_P(&eeprom.data, &eeprom_default.eeprom, sizeof(t_eeprom_storage));
+		eeprom.info.checksum = eeprom_checksum(&eeprom.data, sizeof(t_eeprom_storage));
+		eeprom.info.magic = EEPROM_MAGIC_BYTE;
+		eeprom.info.version = 0;
+		eeprom_write_block(&eeprom, &eeprom_eemem[0], sizeof(t_eeprom_storage_aligned));
+		eeprom.info.magic = 0;
 	}
 	else
 	{
 		// Load best config into RAM
-		eeprom_read_block(&eeprom_shadow, &eeprom_eemem[best_index], sizeof(t_eeprom_storage_aligned));
-		memcpy(&eeprom, &eeprom_shadow.eeprom, sizeof(t_eeprom_storage));
-		eeprom_shadow.info.magic = best_index;
+		eeprom_read_block(&eeprom, &eeprom_eemem[best_index], sizeof(t_eeprom_storage_aligned));
+		eeprom.info.magic = best_index;
 	}
 }
 
 void eeprom_load_defaults(void)
 {
-	memcpy_P(&eeprom, &eeprom_default.eeprom, sizeof(t_eeprom_storage));
-	memcpy_P(&eeprom_status, &eeprom_default.eeprom_status, sizeof(t_eeprom_status));
+	memcpy_P(&eeprom.data, &eeprom_default.eeprom, sizeof(t_eeprom_storage));
+	memcpy_P(&eeprom_status.data, &eeprom_default.eeprom_status, sizeof(t_eeprom_status));
 }
 
 void eeprom_sync_storage(void)
 {
 	uint8_t partition_index;
+	uint16_t checksum = eeprom_checksum(&eeprom.data, sizeof(t_eeprom_storage));
 	
-    if (memcmp(&eeprom, &eeprom_shadow.eeprom, sizeof(t_eeprom_storage)))
+    if (eeprom.info.checksum!=checksum)
     {
-		memcpy(&eeprom_shadow.eeprom, &eeprom, sizeof(t_eeprom_storage));
-		partition_index = (eeprom_shadow.info.magic + 1) % EEPROM_STORAGE_ENTRY_COUNT;			
-		eeprom_shadow.info.magic = EEPROM_MAGIC_BYTE;
-		eeprom_shadow.info.version++;
-		eeprom_shadow.info.checksum = eeprom_checksum();
-		eeprom_update_block(&eeprom_shadow, &eeprom_eemem[partition_index], sizeof(t_eeprom_storage_aligned));
-		eeprom_shadow.info.magic = partition_index;
+		partition_index = (eeprom.info.magic + 1) % EEPROM_STORAGE_ENTRY_COUNT;			
+		eeprom.info.magic = EEPROM_MAGIC_BYTE;
+		eeprom.info.version++;
+		eeprom.info.checksum = checksum;
+		eeprom_write_block(&eeprom, &eeprom_eemem[partition_index], sizeof(t_eeprom_storage_aligned));
+		eeprom.info.magic = partition_index;
     }
 }
 
 void eeprom_sync_status(void)
 {  
 	uint8_t partition_index;
+	uint16_t checksum = eeprom_checksum(&eeprom_status.data, sizeof(t_eeprom_status));
 	
-	if (memcmp(&eeprom_status, &eeprom_status_shadow.eeprom, sizeof(t_eeprom_status)))
+	if (eeprom_status.info.checksum!=checksum)
 	{
-		memcpy(&eeprom_status_shadow.eeprom, &eeprom_status, sizeof(t_eeprom_status));
-		partition_index = (eeprom_status_shadow.info.magic + 1) % EEPROM_STATUS_ENTRY_COUNT;
-		eeprom_status_shadow.info.magic = EEPROM_MAGIC_BYTE;
-		eeprom_status_shadow.info.version++;
-		eeprom_status_shadow.info.checksum = eeprom_status_checksum();
-		eeprom_update_block(&eeprom_status_shadow, &eeprom_status_eemem[partition_index], sizeof(t_eeprom_status_aligned));
-		eeprom_status_shadow.info.magic = partition_index;
+		partition_index = (eeprom_status.info.magic + 1) % EEPROM_STATUS_ENTRY_COUNT;
+		eeprom_status.info.magic = EEPROM_MAGIC_BYTE;
+		eeprom_status.info.version++;
+		eeprom_status.info.checksum = checksum;
+		eeprom_write_block(&eeprom_status, &eeprom_status_eemem[partition_index], sizeof(t_eeprom_status_aligned));
+		eeprom_status.info.magic = partition_index;
 	}
-}
-
-uint16_t eeprom_checksum(void)
-{
-	uint16_t crc = 0;
-	uint16_t index = 0;
-	
-	for (index=0;index<sizeof(t_eeprom_storage);index++)
-	{
-		crc = _crc_xmodem_update(crc, ((uint8_t *) &eeprom_shadow.eeprom)[index]);	
-	}
-	
-	return crc;
-}
-
-uint16_t eeprom_status_checksum(void)
-{
-	uint16_t crc = 0;
-	uint16_t index = 0;
-	
-	for (index=0;index<sizeof(t_eeprom_status);index++)
-	{
-		crc = _crc_xmodem_update(crc, ((uint8_t *) &eeprom_status_shadow.eeprom)[index]);
-	}
-	
-	return crc;
 }

@@ -32,16 +32,12 @@
 #ifndef EEPROM_H
 #define	EEPROM_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
-
 #define EEPROM_MAGIC_BYTE	0xAA
 #define EEPROM_STORAGE_ENTRY_COUNT	2UL
 #define EEPROM_STATUS_ENTRY_COUNT	((EEPROM_SIZE-(EEPROM_STORAGE_ENTRY_COUNT*sizeof (t_eeprom_storage_aligned)))/sizeof (t_eeprom_status_aligned))
 
 typedef struct {
-	uint8_t salt;
+	uint8_t version;
 	uint16_t sv_serial_number;
 	uint16_t sv_destination_id;
 #define EEPROM_CFG
@@ -69,34 +65,31 @@ typedef struct {
 
 typedef struct {
 	t_eeprom_info info;
-	t_eeprom_storage eeprom;
+	t_eeprom_storage data;
 	char _padding[EEPROM_PAGE_SIZE * ((sizeof (t_eeprom_storage) + sizeof (t_eeprom_info) + EEPROM_PAGE_SIZE - 1) / EEPROM_PAGE_SIZE) - sizeof (t_eeprom_storage) - sizeof (t_eeprom_info)];
 } t_eeprom_storage_aligned;
 
 typedef struct {
 	t_eeprom_info info;
-	t_eeprom_status eeprom;
+	t_eeprom_status data;
 	char _padding[EEPROM_PAGE_SIZE * ((sizeof (t_eeprom_status) + sizeof (t_eeprom_info) + EEPROM_PAGE_SIZE - 1) / EEPROM_PAGE_SIZE) - sizeof (t_eeprom_status) - sizeof (t_eeprom_info)];
 } t_eeprom_status_aligned;
 
-uint16_t eeprom_checksum(void);
-uint16_t eeprom_status_checksum(void);
+void eeprom_init(void);
+uint16_t eeprom_checksum(const void *data, uint16_t length);
+void eeprom_write_block(const void *src, void *dst, uint16_t length);
+void eeprom_write_page(uint16_t addr);
+void * eeprom_read_block(void *dst, void *src, uint16_t length);
 void eeprom_load_storage(void);
 void eeprom_sync_storage(void);
 void eeprom_load_status(void);
 void eeprom_sync_status(void);
 void eeprom_load_defaults(void);
 
-extern t_eeprom_storage eeprom;
-extern t_eeprom_storage_aligned eeprom_shadow;
-extern t_eeprom_status eeprom_status;
-extern t_eeprom_status_aligned eeprom_status_shadow;
+extern t_eeprom_storage_aligned eeprom;
+extern t_eeprom_status_aligned eeprom_status;
 extern t_eeprom_storage_aligned eeprom_eemem[];
 extern t_eeprom_status_aligned eeprom_status_eemem[];
-
-#ifdef	__cplusplus
-}
-#endif
 
 #endif	/* EEPROM_H */
 

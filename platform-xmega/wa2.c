@@ -91,16 +91,16 @@ PROCESS_THREAD(wa2_process, ev, data)
 			}
 			
 		}
-		else if ((eeprom.servo_multipos_opcode&0x0F) && (ln_gpio_status_flag[(eeprom.servo_multipos_opcode&0xF)/8]&(1<<((eeprom.servo_multipos_opcode&0xF)%8))))
+		else if ((eeprom.data.servo_multipos_opcode&0x0F) && (ln_gpio_status_flag[(eeprom.data.servo_multipos_opcode&0xF)/8]&(1<<((eeprom.data.servo_multipos_opcode&0xF)%8))))
 		{
 			// Set new position accordingly
-			if (ln_gpio_status[(eeprom.servo_multipos_opcode&0xF)/8]&(1<<((eeprom.servo_multipos_opcode&0xF)%8)))
+			if (ln_gpio_status[(eeprom.data.servo_multipos_opcode&0xF)/8]&(1<<((eeprom.data.servo_multipos_opcode&0xF)%8)))
 			{
-				servo[0].position_setpoint = eeprom.servo_multipos[0][1];
+				servo[0].position_setpoint = eeprom.data.servo_multipos[0][1];
 			}
 			else
 			{
-				servo[0].position_setpoint = eeprom.servo_multipos[0][0];
+				servo[0].position_setpoint = eeprom.data.servo_multipos[0][0];
 			}
 			// Turn on relay if position greater than 127
 			if (servo[0].position_actual>127)
@@ -115,8 +115,8 @@ PROCESS_THREAD(wa2_process, ev, data)
 			// If we reached the final position, transmit a switch report
 			if (servo[0].position_actual==servo[0].position_setpoint)
 			{
-				ln_gpio_tx[(eeprom.servo_multipos_opcode&0xF)/8] |= (1<<((eeprom.servo_multipos_opcode&0xF)%8));
-				ln_gpio_status_flag[(eeprom.servo_multipos_opcode&0xF)/8] &= ~(1<<((eeprom.servo_multipos_opcode&0xF)%8));
+				ln_gpio_tx[(eeprom.data.servo_multipos_opcode&0xF)/8] |= (1<<((eeprom.data.servo_multipos_opcode&0xF)%8));
+				ln_gpio_status_flag[(eeprom.data.servo_multipos_opcode&0xF)/8] &= ~(1<<((eeprom.data.servo_multipos_opcode&0xF)%8));
 			}
 			
 		}
@@ -153,16 +153,16 @@ PROCESS_THREAD(wa2_process, ev, data)
 			}
 			
 		}
-		else if ((eeprom.servo_multipos_opcode&0xF0) && (ln_gpio_status_flag[(eeprom.servo_multipos_opcode>>4)/8]&(1<<((eeprom.servo_multipos_opcode>>4)%8))))
+		else if ((eeprom.data.servo_multipos_opcode&0xF0) && (ln_gpio_status_flag[(eeprom.data.servo_multipos_opcode>>4)/8]&(1<<((eeprom.data.servo_multipos_opcode>>4)%8))))
 		{
 			// Set new position accordingly
-			if (ln_gpio_status[(eeprom.servo_multipos_opcode>>4)/8]&(1<<((eeprom.servo_multipos_opcode>>4)%8)))
+			if (ln_gpio_status[(eeprom.data.servo_multipos_opcode>>4)/8]&(1<<((eeprom.data.servo_multipos_opcode>>4)%8)))
 			{
-				servo[1].position_setpoint = eeprom.servo_multipos[1][1];
+				servo[1].position_setpoint = eeprom.data.servo_multipos[1][1];
 			}
 			else
 			{
-				servo[1].position_setpoint = eeprom.servo_multipos[1][0];
+				servo[1].position_setpoint = eeprom.data.servo_multipos[1][0];
 			}
 			// Turn on relay if position greater than 127
 			if (servo[1].position_actual>127)
@@ -177,8 +177,8 @@ PROCESS_THREAD(wa2_process, ev, data)
 			// If we reached the final position, transmit a switch report
 			if (servo[1].position_actual==servo[1].position_setpoint)
 			{
-				ln_gpio_tx[(eeprom.servo_multipos_opcode>>4)/8] |= (1<<((eeprom.servo_multipos_opcode>>4)%8));
-				ln_gpio_status_flag[(eeprom.servo_multipos_opcode>>4)/8] &= ~(1<<((eeprom.servo_multipos_opcode>>4)%8));
+				ln_gpio_tx[(eeprom.data.servo_multipos_opcode>>4)/8] |= (1<<((eeprom.data.servo_multipos_opcode>>4)%8));
+				ln_gpio_status_flag[(eeprom.data.servo_multipos_opcode>>4)/8] &= ~(1<<((eeprom.data.servo_multipos_opcode>>4)%8));
 			}
 			
 		}
@@ -198,15 +198,15 @@ void ln_throttle_process(lnMsg *LnPacket)
 	switch (LnPacket->data[0])
 	{
 		case OPC_LOCO_ADR:
-			rSlot.adr = eeprom.sv_destination_id&0x7F;
-			rSlot.adr2 = (eeprom.sv_destination_id>>7)&0x7F;
+			rSlot.adr = eeprom.data.sv_destination_id&0x7F;
+			rSlot.adr2 = (eeprom.data.sv_destination_id>>7)&0x7F;
 			rSlot.stat = LOCO_IDLE | DEC_MODE_128;
 			rSlot.id1 = 0;
 			rSlot.id2 = 0;
 
 			if ((LnPacket->la.adr_hi==rSlot.adr2) && (LnPacket->la.adr_lo==rSlot.adr))
 			{
-				rSlot.slot = (eeprom.sv_destination_id&0x7F)?(eeprom.sv_destination_id&0x7F):1;
+				rSlot.slot = (eeprom.data.sv_destination_id&0x7F)?(eeprom.data.sv_destination_id&0x7F):1;
 				SendPacket.sd.command   = OPC_SL_RD_DATA  ; //opcode
 				SendPacket.sd.mesg_size = 14              ; // length
 				SendPacket.sd.slot      = rSlot.slot      ; // slot    2
@@ -233,9 +233,9 @@ void ln_throttle_process(lnMsg *LnPacket)
 			{
 				if (rSlot.slot==0)
 				{
-					rSlot.slot = (eeprom.sv_destination_id&0x7F)?(eeprom.sv_destination_id&0x7F):1;
-					rSlot.adr = eeprom.sv_destination_id&0x7F;
-					rSlot.adr2 = (eeprom.sv_destination_id>>7)&0x7F;
+					rSlot.slot = (eeprom.data.sv_destination_id&0x7F)?(eeprom.data.sv_destination_id&0x7F):1;
+					rSlot.adr = eeprom.data.sv_destination_id&0x7F;
+					rSlot.adr2 = (eeprom.data.sv_destination_id>>7)&0x7F;
 				}
 				
 				servo_act = &servo[0].min;
@@ -440,26 +440,26 @@ void ln_throttle_process(lnMsg *LnPacket)
 				// F7 Load EEPROM Settings
 				if (snd_changes&(1<<2))
 				{
-					servo[0].min = eeprom.servo_min[0];
-					servo[1].min = eeprom.servo_min[1];
+					servo[0].min = eeprom.data.servo_min[0];
+					servo[1].min = eeprom.data.servo_min[1];
 							
-					servo[0].max = eeprom.servo_max[0];
-					servo[1].max = eeprom.servo_max[1];
+					servo[0].max = eeprom.data.servo_max[0];
+					servo[1].max = eeprom.data.servo_max[1];
 							
-					servo[0].time_ratio = eeprom.servo_time_ratio[0];
-					servo[1].time_ratio = eeprom.servo_time_ratio[1];
+					servo[0].time_ratio = eeprom.data.servo_time_ratio[0];
+					servo[1].time_ratio = eeprom.data.servo_time_ratio[1];
 				}
 				// F8 Save Config
 				if (snd_changes&(1<<3))
 				{
-					eeprom.servo_min[0] = servo[0].min;
-					eeprom.servo_min[1] = servo[1].min;
+					eeprom.data.servo_min[0] = servo[0].min;
+					eeprom.data.servo_min[1] = servo[1].min;
 							
-					eeprom.servo_max[0] = servo[0].max;
-					eeprom.servo_max[1] = servo[1].max;
+					eeprom.data.servo_max[0] = servo[0].max;
+					eeprom.data.servo_max[1] = servo[1].max;
 							
-					eeprom.servo_time_ratio[0] = servo[0].time_ratio;
-					eeprom.servo_time_ratio[1] = servo[1].time_ratio;
+					eeprom.data.servo_time_ratio[0] = servo[0].time_ratio;
+					eeprom.data.servo_time_ratio[1] = servo[1].time_ratio;
 							
 					eeprom_sync_storage();
 				}
@@ -477,14 +477,14 @@ void ln_sv_cmd_callback(uint8_t cmd)
 	if (cmd==5)
 	{
 		rSlot.slot = 0;
-		if (eeprom.servo_timeout==0)
+		if (eeprom.data.servo_timeout==0)
 		{
-			eeprom.servo_timeout = servo_timeout_shadow;
+			eeprom.data.servo_timeout = servo_timeout_shadow;
 		}
 		else
 		{
-			servo_timeout_shadow = eeprom.servo_timeout;
-			eeprom.servo_timeout = 0;
+			servo_timeout_shadow = eeprom.data.servo_timeout;
+			eeprom.data.servo_timeout = 0;
 		}
 	}
 	else if ((cmd>=10) && (cmd<30))
@@ -552,12 +552,12 @@ void ln_sv_cmd_callback(uint8_t cmd)
 				break;
 			// Save settings
 			case 0:
-				eeprom.servo_min[idx_servo] = servo[idx_servo].min;
-				eeprom.servo_max[idx_servo] = servo[idx_servo].max;
+				eeprom.data.servo_min[idx_servo] = servo[idx_servo].min;
+				eeprom.data.servo_max[idx_servo] = servo[idx_servo].max;
 				
-				eeprom.servo_timeout = servo_timeout_shadow;				
+				eeprom.data.servo_timeout = servo_timeout_shadow;				
 				eeprom_sync_storage();
-				eeprom.servo_timeout = 0;
+				eeprom.data.servo_timeout = 0;
 				
 				break;
 			// Center servo in current position (left or right)
@@ -614,7 +614,7 @@ void relay_governor(void)
 		
 		relay_cmd |= 0xF0;
 		relay_state = relay_request;
-		eeprom_status.relay_request = relay_request;
+		eeprom_status.data.relay_request = relay_request;
 	}
 }
 
@@ -634,7 +634,7 @@ PROCESS_THREAD(relay_process, ev, data)
 	PROCESS_BEGIN();
 	
 	// Initialization
-	relay_request = eeprom_status.relay_request;
+	relay_request = eeprom_status.data.relay_request;
 	relay_state = !relay_request;
 	etimer_set(&relay_timer, 20E-3*CLOCK_SECOND);
 	
@@ -735,23 +735,23 @@ uint16_t port_pin_status(void)
 
 void port_di_init(void)
 {
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 0, 2);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 1, 3);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 2, 7);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 3, 6);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 4, 5);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 5, 5);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 6, 1);
-	MAP_BITS(eeprom.port_dir, PORTD.DIR, 7, 0);
-	MAP_BITS(eeprom.port_dir, PORTA.DIR, 8, 6);
-	MAP_BITS(eeprom.port_dir, PORTA.DIR, 9, 7);
-	MAP_BITS(eeprom.port_dir, PORTB.DIR, 10, 0);
-	MAP_BITS(eeprom.port_dir, PORTB.DIR, 11, 1);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 12, 0);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 13, 1);
-	MAP_BITS(eeprom.port_dir, PORTA.DIR, 14, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 0, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 1, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 2, 7);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 3, 6);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 4, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 5, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 6, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTD.DIR, 7, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTA.DIR, 8, 6);
+	MAP_BITS(eeprom.data.port_dir, PORTA.DIR, 9, 7);
+	MAP_BITS(eeprom.data.port_dir, PORTB.DIR, 10, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTB.DIR, 11, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 12, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 13, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTA.DIR, 14, 5);
 
-	if (eeprom.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
+	if (eeprom.data.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
 	{
 		PORTC.PIN7CTRL = PORT_OPC_PULLUP_gc;
 		PORTC.PIN6CTRL = PORT_OPC_PULLUP_gc;
@@ -790,7 +790,7 @@ void port_di_init(void)
 	port_di = port_pin_status();
 	
 	// Restore command bits of relay 2
-	if (eeprom_status.relay_request&(1<<1))
+	if (eeprom_status.data.relay_request&(1<<1))
 	{
 		port_mapped |= (1<<15);
 		port_user |= (1<<PU_RELAY2_REQ);

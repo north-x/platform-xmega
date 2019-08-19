@@ -219,13 +219,13 @@ void servo_init(void)
 	{
 		servo[index].pulse_min = SERVO_MIN;
 		servo[index].pulse_delta = SERVO_DELTA;
-		servo[index].min = eeprom.servo_min[index];
-		servo[index].max = eeprom.servo_max[index];
-		servo[index].time_ratio = eeprom.servo_time_ratio[index];
+		servo[index].min = eeprom.data.servo_min[index];
+		servo[index].max = eeprom.data.servo_max[index];
+		servo[index].time_ratio = eeprom.data.servo_time_ratio[index];
 		servo[index].time_delta = 4;
-		servo[index].position_setpoint = eeprom_status.servo_position[index];
-		servo[index].position_start = eeprom_status.servo_position[index];
-		servo[index].position_actual = eeprom_status.servo_position[index];
+		servo[index].position_setpoint = eeprom_status.data.servo_position[index];
+		servo[index].position_start = eeprom_status.data.servo_position[index];
+		servo[index].position_actual = eeprom_status.data.servo_position[index];
 		servo[index].active_time = 0;
 	}
 	
@@ -257,7 +257,7 @@ void servo_init(void)
 	{
 		TCC0.CTRLB |= ((1<<(S12_PWM+4))|(1<<(S22_PWM+4)));
 		PORTC.DIRSET = (1<<S12_PWM)|(1<<S22_PWM);
-		eeprom.port_dir |= (1<<0)|(1<<1);
+		eeprom.data.port_dir |= (1<<0)|(1<<1);
 	}
 	
 	if (servo_status&(1<<SERVO_STATUS_ENABLE_PWM_B))
@@ -266,11 +266,11 @@ void servo_init(void)
 		PORTC.PIN0CTRL |= PORT_INVEN_bm;
 		PORTC.PIN1CTRL |= PORT_INVEN_bm;
 		PORTC.DIRSET = (1<<S1_PWM)|(1<<S2_PWM);
-		eeprom.port_dir |= (1<<12)|(1<<13);
+		eeprom.data.port_dir |= (1<<12)|(1<<13);
 	}
 	
 	// Startup delay
-	servo_timer = eeprom.servo_startup_delay;
+	servo_timer = eeprom.data.servo_startup_delay;
 	
 }
 
@@ -280,7 +280,7 @@ PROCESS_THREAD(servo_process, ev, data)
 	PROCESS_BEGIN();
 	
 	// Check configuration
-	if (!(eeprom.servo_config&((1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B))))
+	if (!(eeprom.data.servo_config&((1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B))))
 	{
 		process_exit(PROCESS_CURRENT());
 	}
@@ -303,7 +303,7 @@ PROCESS_THREAD(servo_process, ev, data)
 		
 	while (1)
 	{
-		if (eeprom.servo_timeout==0)
+		if (eeprom.data.servo_timeout==0)
 			servo_status |= (1<<SERVO_STATUS_PWR_ALWAYS_ON);
 		else
 			servo_status &= ~(1<<SERVO_STATUS_PWR_ALWAYS_ON);
@@ -315,10 +315,10 @@ PROCESS_THREAD(servo_process, ev, data)
 			{							
 				// Write flags to eeprom after ~5s if the user has power always on
 				// or after the timeout occurs
-				if (eeprom.servo_timeout==0)
+				if (eeprom.data.servo_timeout==0)
 					servo_timer = 0xFF;
 				else
-					servo_timer = eeprom.servo_timeout;
+					servo_timer = eeprom.data.servo_timeout;
 				
 				// Enable eeprom update after timer elapsed
 				servo_status |= 1<<SERVO_STATUS_TRIG_EEPROM_WRITE;
@@ -338,8 +338,8 @@ PROCESS_THREAD(servo_process, ev, data)
 							
 				if (servo_status&(1<<SERVO_STATUS_TRIG_EEPROM_WRITE))
 				{
-					eeprom_status.servo_position[0] = servo[0].position_setpoint;
-					eeprom_status.servo_position[1] = servo[1].position_setpoint;
+					eeprom_status.data.servo_position[0] = servo[0].position_setpoint;
+					eeprom_status.data.servo_position[1] = servo[1].position_setpoint;
 					eeprom_sync_status();
 					servo_status &= ~(1<<SERVO_STATUS_TRIG_EEPROM_WRITE);
 				}
@@ -549,20 +549,20 @@ void servo_isr(void)
 
 void servo_update_configuration(void)
 {
-	servo[0].min = eeprom.servo_min[0];
-	servo[1].min = eeprom.servo_min[1];
+	servo[0].min = eeprom.data.servo_min[0];
+	servo[1].min = eeprom.data.servo_min[1];
     
-	servo[0].max = eeprom.servo_max[0];
-	servo[1].max = eeprom.servo_max[1];
+	servo[0].max = eeprom.data.servo_max[0];
+	servo[1].max = eeprom.data.servo_max[1];
     
-	servo[0].time_ratio = eeprom.servo_time_ratio[0];
-	servo[1].time_ratio = eeprom.servo_time_ratio[1];
+	servo[0].time_ratio = eeprom.data.servo_time_ratio[0];
+	servo[1].time_ratio = eeprom.data.servo_time_ratio[1];
 }
 
 void servo_mode_update(void)
 {	
-	servo_start_method = eeprom.servo_start_method;
-	servo_status = eeprom.servo_config|(servo_status&~((1<<SERVO_STATUS_PWR_ALWAYS_ON)|(1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B)));
+	servo_start_method = eeprom.data.servo_start_method;
+	servo_status = eeprom.data.servo_config|(servo_status&~((1<<SERVO_STATUS_PWR_ALWAYS_ON)|(1<<SERVO_STATUS_ENABLE_PWM_A)|(1<<SERVO_STATUS_ENABLE_PWM_B)));
 	
 	if (servo_status&(1<<SERVO_STATUS_ENABLE_PWM_A))
 		TCC0.CTRLB |= ((1<<(S12_PWM+4))|(1<<(S22_PWM+4)));
