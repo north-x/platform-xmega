@@ -39,7 +39,6 @@
 
 #include "config.h"
 #include "eeprom.h"
-#include "usb/usb.h"
 #include <avr/wdt.h>
 #include <string.h>
 

@@ -33,13 +33,9 @@
 #include "usb_support.h"
 #include "loconet.h"
 #include "ln_interface.h"
-#include "usb/usb.h"
-#include "usb/usb_pipe.h"
+#include "usb/usb_cdc.h"
 
 PROCESS(usb_process, "USB Handler");
-
-USB_PIPE(ep_in,  0x81 | USB_EP_PP, USB_EP_TYPE_BULK_gc, 64, 4, PIPE_ENABLE_FLUSH);
-USB_PIPE(ep_out, 0x02 | USB_EP_PP, USB_EP_TYPE_BULK_gc, 64, 4, 0);
 
 void usb_init(void)
 {
@@ -48,7 +44,7 @@ void usb_init(void)
 	USB.INTCTRLA = USB_BUSEVIE_bm | USB_INTLVL_MED_gc;
 	USB.INTCTRLB = USB_TRNIE_bm | USB_SETUPIE_bm;
 	
-	USB_Init();
+	usb_cdc_init();
 	process_start(&usb_process, NULL);
 }
 
@@ -56,30 +52,39 @@ void sendLocoNetPacketUSB(lnMsg *LnPacket)
 {
 	uint8_t index, size;
 	
-	if (usb_pipe_can_write(&ep_in))
+	if (cdc_txb.flag==0)
 	{
 		size = getLnMsgSize(LnPacket);
 		
 		for (index=0;index<size;index++)
 		{
-			usb_pipe_write_byte(&ep_in, LnPacket->data[index]);
+			cdc_txb.data[index] = LnPacket->data[index];
 		}
 		
-		usb_pipe_flush(&ep_in);
+		cdc_txb.len = size;
+		cdc_txb.flag = 1;
 	}
+	
 }
 
 PROCESS_THREAD(usb_process, ev, data)
 {
 	lnMsg *LnPacket;
-	
+		
 	PROCESS_BEGIN();
+	
+	cdc_rxb.flag = 1;
+	cdc_txb.flag = 0;
 	
 	while (1)
 	{
-		if (usb_pipe_can_read(&ep_out))
+		EP_DEF_in(ep_out);
+		EP_DEF_out(ep_in);
+		EP_DEF_out(ep_note);
+				
+		if (cdc_rxb.flag==0)
 		{
-			LnPacket = (lnMsg *) usb_pipe_read_ptr(&ep_out);
+			LnPacket = (lnMsg *) cdc_rxb.data;
 		
 			if (getLnMsgSize(LnPacket))
 			{
@@ -88,63 +93,11 @@ PROCESS_THREAD(usb_process, ev, data)
 				sendLocoNetPacket(LnPacket);
 				lnTxEcho = tmp;
 			}
-			usb_pipe_done_read(&ep_out);
+			cdc_rxb.flag = 1;
 		}
-		
 		PROCESS_PAUSE();
 	}
 	
 	PROCESS_END();
 }
 
-void EVENT_USB_Device_ConfigurationChanged(uint8_t configuration)
-{
-	usb_pipe_init(&ep_in);
-	usb_pipe_init(&ep_out);
-}
-
-ISR(USB_BUSEVENT_vect)
-{
-	if (USB.INTFLAGSACLR & USB_SOFIF_bm)
-	{
-		USB.INTFLAGSACLR = USB_SOFIF_bm;
-	}
-	else if (USB.INTFLAGSACLR & (USB_CRCIF_bm | USB_UNFIF_bm | USB_OVFIF_bm))
-	{
-		USB.INTFLAGSACLR = (USB_CRCIF_bm | USB_UNFIF_bm | USB_OVFIF_bm);
-	}
-	else if (USB.INTFLAGSACLR & USB_STALLIF_bm)
-	{
-		USB.INTFLAGSACLR = USB_STALLIF_bm;
-	}
-	else
-	{
-		USB.INTFLAGSACLR = USB_SUSPENDIF_bm | USB_RESUMEIF_bm | USB_RSTIF_bm;
-		USB_Evt_Task();
-	}
-}
-
-ISR(USB_TRNCOMPL_vect)
-{
-	USB.FIFOWP = 0;
-	USB.INTFLAGSBCLR = USB_SETUPIF_bm | USB_TRNIF_bm;
-	USB_Task();
-	usb_pipe_handle(&ep_in);
-	usb_pipe_handle(&ep_out);
-}
-
-/** Event handler for the library USB Control Request reception event. */
-bool EVENT_USB_Device_ControlRequest(USB_Request_Header_t* req)
-{
-	if ((req->bmRequestType & CONTROL_REQTYPE_TYPE) == REQTYPE_VENDOR)
-	{
-		switch (req->bRequest)
-		{
-			case 0xBB: // disconnect from USB, jump to bootloader
-				USB_enter_bootloader();
-				return true;
-		}
-	}
-	
-	return false;
-}

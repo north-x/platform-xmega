@@ -39,7 +39,8 @@
 #include "config.h"
 #include "eeprom.h"
 #include "usb_support.h"
-#include "usb/usb.h"
+#include "usb/usb_xm.h"
+#include "usb/usb_cdc.h"
 
 void ubasic_start(void);
 void init(void);
