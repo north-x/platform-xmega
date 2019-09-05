@@ -37,13 +37,10 @@
 
 PROCESS(usb_process, "USB Handler");
 
+LnBuf LnUSBBuffer;
+
 void usb_init(void)
 {
-	//USB_ConfigureClock();
-	
-	USB.INTCTRLA = USB_BUSEVIE_bm | USB_INTLVL_MED_gc;
-	USB.INTCTRLB = USB_TRNIE_bm | USB_SETUPIE_bm;
-	
 	usb_cdc_init();
 	process_start(&usb_process, NULL);
 }
@@ -73,6 +70,7 @@ PROCESS_THREAD(usb_process, ev, data)
 		
 	PROCESS_BEGIN();
 	
+	initLnBuf(&LnUSBBuffer);
 	cdc_rxb.flag = 1;
 	cdc_txb.flag = 0;
 	
@@ -84,17 +82,22 @@ PROCESS_THREAD(usb_process, ev, data)
 				
 		if (cdc_rxb.flag==0)
 		{
-			LnPacket = (lnMsg *) cdc_rxb.data;
-		
-			if (getLnMsgSize(LnPacket))
+			for (uint8_t index=0;index<cdc_rxb.len;index++)
 			{
-				uint8_t tmp = lnTxEcho;
-				lnTxEcho = 1;
-				sendLocoNetPacket(LnPacket);
-				lnTxEcho = tmp;
+				addByteLnBuf(&LnUSBBuffer, cdc_rxb.data[index]);
 			}
 			cdc_rxb.flag = 1;
 		}
+
+		LnPacket = recvLnMsg(&LnUSBBuffer);
+		if (LnPacket)
+		{
+			uint8_t tmp = lnTxEcho;
+			lnTxEcho = 1;
+			sendLocoNetPacket(LnPacket);
+			lnTxEcho = tmp;
+		}
+		
 		PROCESS_PAUSE();
 	}
 	
