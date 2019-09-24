@@ -32,15 +32,12 @@
 #ifndef EEPROM_H
 #define	EEPROM_H
 
-#ifdef	__cplusplus
-extern "C" {
-#endif
+#define EEPROM_MAGIC_BYTE	0xAA
+#define EEPROM_STORAGE_ENTRY_COUNT	2UL
+#define EEPROM_STATUS_ENTRY_COUNT	((EEPROM_SIZE-(EEPROM_STORAGE_ENTRY_COUNT*sizeof (t_eeprom_storage_aligned)))/sizeof (t_eeprom_status_aligned))
 
-
-#define EEPROM_BASE     0
-   
-typedef struct t_eeprom_storage {
-	uint8_t salt;
+typedef struct {
+	uint8_t version;
 	uint16_t sv_serial_number;
 	uint16_t sv_destination_id;
 #define EEPROM_CFG
@@ -48,42 +45,51 @@ typedef struct t_eeprom_storage {
 #undef EEPROM_CFG
 } t_eeprom_storage;
 
-typedef struct t_eeprom_status {
+typedef struct {
 	uint8_t flags;
 #define EEPROM_STATUS_CFG
 #include "config.h"
 #undef EEPROM_STATUS_CFG
 } t_eeprom_status;
 
-typedef struct t_eeprom_default {
-	struct t_eeprom_storage eeprom;
-	struct t_eeprom_status eeprom_status;
+typedef struct {
+	t_eeprom_storage eeprom;
+	t_eeprom_status eeprom_status;
 } t_eeprom_default;
 
-void eeprom_init(void);
-void eeprom_read(unsigned char addr, unsigned char len, unsigned char *buf);
-unsigned char eeprom_write(unsigned char addr, unsigned char len, unsigned char *buf);
+typedef struct {
+	uint8_t magic;
+	uint8_t version;
+	uint16_t checksum;
+} t_eeprom_info;
 
+typedef struct {
+	t_eeprom_info info;
+	t_eeprom_storage data;
+	char _padding[EEPROM_PAGE_SIZE * ((sizeof (t_eeprom_storage) + sizeof (t_eeprom_info) + EEPROM_PAGE_SIZE - 1) / EEPROM_PAGE_SIZE) - sizeof (t_eeprom_storage) - sizeof (t_eeprom_info)];
+} t_eeprom_storage_aligned;
+
+typedef struct {
+	t_eeprom_info info;
+	t_eeprom_status data;
+	char _padding[EEPROM_PAGE_SIZE * ((sizeof (t_eeprom_status) + sizeof (t_eeprom_info) + EEPROM_PAGE_SIZE - 1) / EEPROM_PAGE_SIZE) - sizeof (t_eeprom_status) - sizeof (t_eeprom_info)];
+} t_eeprom_status_aligned;
+
+void eeprom_init(void);
+uint16_t eeprom_checksum(const void *data, uint16_t length);
+void eeprom_write_block(const void *src, void *dst, uint16_t length);
+void eeprom_write_page(uint16_t addr);
+void * eeprom_read_block(void *dst, void *src, uint16_t length);
 void eeprom_load_storage(void);
 void eeprom_sync_storage(void);
 void eeprom_load_status(void);
 void eeprom_sync_status(void);
 void eeprom_load_defaults(void);
 
-extern struct t_eeprom_storage eeprom;
-extern struct t_eeprom_storage eeprom_shadow;
-extern struct t_eeprom_status eeprom_status;
-extern struct t_eeprom_status eeprom_status_shadow;
-extern struct t_eeprom_storage eeprom_eemem;
-extern struct t_eeprom_status eeprom_status_eemem;
-
-extern unsigned char eeprom_temp;
-void eeprom_test_read(void);
-void eeprom_test_write(void);
-
-#ifdef	__cplusplus
-}
-#endif
+extern t_eeprom_storage_aligned eeprom;
+extern t_eeprom_status_aligned eeprom_status;
+extern t_eeprom_storage_aligned eeprom_eemem[];
+extern t_eeprom_status_aligned eeprom_status_eemem[];
 
 #endif	/* EEPROM_H */
 

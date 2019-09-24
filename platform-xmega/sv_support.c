@@ -30,7 +30,6 @@
  */ 
 
 #include <stdint.h>
-#include <avr/eeprom.h>
 #include "sv_support.h"
 #include "eeprom.h"
 
@@ -90,13 +89,12 @@ byte isValidSVStorage(word Offset)
 
 word readSVDestinationId(void)
 {
-	return eeprom.sv_destination_id;
+	return eeprom.data.sv_destination_id;
 }
 
 word writeSVDestinationId(word usId)
 {
-	eeprom.sv_destination_id = usId;
-	eeprom_shadow.sv_destination_id = usId;
-	eeprom_update_word(&eeprom_eemem.sv_destination_id, usId);
+	eeprom.data.sv_destination_id = usId;
+	eeprom_sync_storage();
 	return 0;
 }
