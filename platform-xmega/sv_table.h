@@ -77,19 +77,6 @@ void cmd_exec(void)
 		case 3:
 			eeprom_load_defaults();
 			break;
-		case 250:
-			cmd_register = eeprom.info.magic;
-			return;
-		case 251:
-			cmd_register = eeprom.info.version;
-			return;
-		case 252:
-			cmd_register = eeprom_status.info.magic;
-			return;
-		case 253:
-			cmd_register = eeprom_status.info.version;
-			return;
-
 	}
 	
 	#define SV_CMD_CALLBACK(fun) fun(cmd_register);
