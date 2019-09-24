@@ -52,11 +52,11 @@
  *
  */
 #ifdef SV_CFG
-SV(280, "Servo Multipos Opcode Select", eeprom.servo_multipos_opcode, 0)
-SV(281, "Servo 1 Multipos Off", eeprom.servo_multipos[0][0], 0)
-SV(282, "Servo 1 Multipos On", eeprom.servo_multipos[0][1], 0)
-SV(283, "Servo 2 Multipos Off", eeprom.servo_multipos[1][0], 0)
-SV(284, "Servo 2 Multipos On", eeprom.servo_multipos[1][1], 0)
+SV(280, "Servo Multipos Opcode Select", eeprom.data.servo_multipos_opcode, 0)
+SV(281, "Servo 1 Multipos Off", eeprom.data.servo_multipos[0][0], 0)
+SV(282, "Servo 1 Multipos On", eeprom.data.servo_multipos[0][1], 0)
+SV(283, "Servo 2 Multipos Off", eeprom.data.servo_multipos[1][0], 0)
+SV(284, "Servo 2 Multipos On", eeprom.data.servo_multipos[1][1], 0)
 #endif
 
 /*

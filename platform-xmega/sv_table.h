@@ -39,7 +39,6 @@
 
 #include "config.h"
 #include "eeprom.h"
-#include "usb/usb.h"
 #include <avr/wdt.h>
 #include <string.h>
 
@@ -48,9 +47,9 @@ uint8_t cmd_register = 0;
 
 SV_TABLE_BEGIN()
 SV_CONST(1, "EEPROM Size", 0)
-SV(2, "SW Version", eeprom.salt, 0)
-SV_LSB(3, "Serial Number L", eeprom.sv_serial_number, 0)
-SV_MSB(4, "Serial Number H", eeprom.sv_serial_number, 0)
+SV(2, "SW Version", eeprom.data.version, 0)
+SV_LSB(3, "Serial Number L", eeprom.data.sv_serial_number, 0)
+SV_MSB(4, "Serial Number H", eeprom.data.sv_serial_number, 0)
 SV(5, "Command Register", cmd_register, cmd_exec)
 
 #define SV_CFG

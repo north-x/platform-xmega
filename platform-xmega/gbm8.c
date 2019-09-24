@@ -58,7 +58,7 @@ PROCESS_THREAD(gbm8_process, ev, data)
 		if (gbm_version==3)
 		{
 			ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-			eeprom.gbm_mode = GBM_MODE_FSZ;
+			eeprom.data.gbm_mode = GBM_MODE_FSZ;
 		}
 		else if (gbm_version==2)
 		{
@@ -83,7 +83,7 @@ PROCESS_NAME(gbm_process);
 
 void update_gbm_mode(void)
 {
-	if (gbm_mode==eeprom.gbm_mode)
+	if (gbm_mode==eeprom.data.gbm_mode)
 		return;
 
 	switch (gbm_mode)
@@ -104,7 +104,7 @@ void update_gbm_mode(void)
 			break;
 	}
 	
-	switch (eeprom.gbm_mode)
+	switch (eeprom.data.gbm_mode)
 	{
 		case GBM_MODE_NORMAL:
 			PORTCFG.VPCTRLB = PORTCFG_VP02MAP_PORTC_gc | PORTCFG_VP13MAP_PORTD_gc;
@@ -125,7 +125,7 @@ void update_gbm_mode(void)
 			break;
 	}
 	
-	gbm_mode = eeprom.gbm_mode;
+	gbm_mode = eeprom.data.gbm_mode;
 }
 
 /**

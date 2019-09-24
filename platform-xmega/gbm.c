@@ -77,11 +77,11 @@ PROCESS_THREAD(gbm_process, ev, data)
 			gbm_avg_int[track] += abs(gbm_value_act[track]+1);
 			gbm_avg_int[track] -= gbm_avg[track];
 			
-			if (gbm_avg[track] > eeprom.gbm_threshold_on[track])
+			if (gbm_avg[track] > eeprom.data.gbm_threshold_on[track])
 			{
 				gbm_register_filt |= (1<<track);
 			}
-			else if (gbm_avg[track] < eeprom.gbm_threshold_off[track])
+			else if (gbm_avg[track] < eeprom.data.gbm_threshold_off[track])
 			{
 				gbm_register_filt &= ~(1<<track);
 			}
@@ -101,15 +101,15 @@ PROCESS_THREAD(gbm_process, ev, data)
 					if ((gbm_register_filt_filt&(1<<track))==0)
 					{
 						gbm_filter_cnt[track]++;
-						if (gbm_filter_cnt[track]>eeprom.gbm_delay_on[track])
+						if (gbm_filter_cnt[track]>eeprom.data.gbm_delay_on[track])
 						{
 							gbm_register_filt_filt |= (1<<track);
-							gbm_filter_cnt[track] = eeprom.gbm_delay_off[track];
+							gbm_filter_cnt[track] = eeprom.data.gbm_delay_off[track];
 						}
 					}
 					else
 					{
-						gbm_filter_cnt[track] = eeprom.gbm_delay_off[track];
+						gbm_filter_cnt[track] = eeprom.data.gbm_delay_off[track];
 					}
 				
 				}
@@ -276,7 +276,7 @@ void gbm_helper_multi_threshold_on(void)
 	{
 		if (gbm_track_select_L&(1<<index))
 		{
-			eeprom.gbm_threshold_on[index] = gbm_temp_multi;
+			eeprom.data.gbm_threshold_on[index] = gbm_temp_multi;
 		}
 	}
 }
@@ -289,7 +289,7 @@ void gbm_helper_multi_threshold_off(void)
 	{
 		if (gbm_track_select_L&(1<<index))
 		{
-			eeprom.gbm_threshold_off[index] = gbm_temp_multi;
+			eeprom.data.gbm_threshold_off[index] = gbm_temp_multi;
 		}
 	}
 }
@@ -302,7 +302,7 @@ void gbm_helper_multi_delay_on(void)
 	{
 		if (gbm_track_select_L&(1<<index))
 		{
-			eeprom.gbm_delay_on[index] = gbm_temp_multi;
+			eeprom.data.gbm_delay_on[index] = gbm_temp_multi;
 		}
 	}
 }
@@ -315,7 +315,7 @@ void gbm_helper_multi_delay_off(void)
 	{
 		if (gbm_track_select_L&(1<<index))
 		{
-			eeprom.gbm_delay_off[index] = gbm_temp_multi;
+			eeprom.data.gbm_delay_off[index] = gbm_temp_multi;
 		}
 	}
 }
@@ -363,7 +363,7 @@ uint16_t port_pin_status(void)
 
 void port_di_init(void)
 {
-	if (eeprom.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
+	if (eeprom.data.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
 	{	
 		PORTC.PIN0CTRL = PORT_OPC_PULLUP_gc;
 		PORTC.PIN1CTRL = PORT_OPC_PULLUP_gc;
@@ -386,14 +386,14 @@ void port_di_init(void)
 		PORTC.PIN7CTRL = PORT_OPC_TOTEM_gc;		
 	}
 	
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 0, 7);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 1, 6);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 2, 5);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 3, 4);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 4, 3);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 5, 2);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 6, 1);
-	MAP_BITS(eeprom.port_dir, PORTC.DIR, 7, 0);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 0, 7);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 1, 6);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 2, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 3, 4);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 4, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 5, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 6, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 7, 0);
 	
 	// Initial key state
 	port_di = port_pin_status();
