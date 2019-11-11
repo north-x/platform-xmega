@@ -3,6 +3,12 @@ Microsoft Visual Studio Solution File, Format Version 11.00
 # Atmel Studio Solution File, Format Version 11.00
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "platform-xmega", "platform-xmega\platform-xmega.cproj", "{8C2D6F38-8830-4628-A856-179BF9068512}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "wa2", "platform-xmega\wa2.cproj", "{F62B3A8B-7C5E-4E97-9037-3F9D0228D805}"
+EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "eam", "platform-xmega\eam.cproj", "{3D825AFA-0C2D-442E-B911-AC82D7FA500E}"
+EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "gbm8", "platform-xmega\gbm8.cproj", "{DF113BEE-3323-4B1B-A65C-0C203772B8D7}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -13,6 +19,18 @@ Global
 		{8C2D6F38-8830-4628-A856-179BF9068512}.Debug|AVR.Build.0 = Debug|AVR
 		{8C2D6F38-8830-4628-A856-179BF9068512}.Release|AVR.ActiveCfg = Release|AVR
 		{8C2D6F38-8830-4628-A856-179BF9068512}.Release|AVR.Build.0 = Release|AVR
+		{F62B3A8B-7C5E-4E97-9037-3F9D0228D805}.Debug|AVR.ActiveCfg = Debug|AVR
+		{F62B3A8B-7C5E-4E97-9037-3F9D0228D805}.Debug|AVR.Build.0 = Debug|AVR
+		{F62B3A8B-7C5E-4E97-9037-3F9D0228D805}.Release|AVR.ActiveCfg = Release|AVR
+		{F62B3A8B-7C5E-4E97-9037-3F9D0228D805}.Release|AVR.Build.0 = Release|AVR
+		{3D825AFA-0C2D-442E-B911-AC82D7FA500E}.Debug|AVR.ActiveCfg = Debug|AVR
+		{3D825AFA-0C2D-442E-B911-AC82D7FA500E}.Debug|AVR.Build.0 = Debug|AVR
+		{3D825AFA-0C2D-442E-B911-AC82D7FA500E}.Release|AVR.ActiveCfg = Release|AVR
+		{3D825AFA-0C2D-442E-B911-AC82D7FA500E}.Release|AVR.Build.0 = Release|AVR
+		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Debug|AVR.ActiveCfg = Debug|AVR
+		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Debug|AVR.Build.0 = Debug|AVR
+		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Release|AVR.ActiveCfg = Release|AVR
+		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>6.1</ProjectVersion>
     <ToolchainName>com.Atmel.AVRGCC8.C</ToolchainName>
-    <ProjectGuid>{8c2d6f38-8830-4628-a856-179bf9068512}</ProjectGuid>
+    <ProjectGuid>{df113bee-3323-4b1b-a65c-0c203772b8d7}</ProjectGuid>
     <avrdevice>ATxmega32A4U</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>Executable</OutputType>
@@ -76,6 +76,7 @@
         <avrgcc.compiler.symbols.DefSymbols>
           <ListValues>
             <Value>F_CPU=32000000L</Value>
+            <Value>GBM8_20121212</Value>
             <Value>AVR</Value>
             <Value>NDEBUG</Value>
           </ListValues>
@@ -112,6 +113,7 @@
         <avrgcc.compiler.symbols.DefSymbols>
           <ListValues>
             <Value>F_CPU=32000000L</Value>
+            <Value>GBM8_20121212</Value>
             <Value>AVR</Value>
           </ListValues>
         </avrgcc.compiler.symbols.DefSymbols>
@@ -330,36 +332,36 @@
     <Compile Include="dev\uart.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="gbm8.h">
+    <Compile Include="gbm8.h">
       <SubType>compile</SubType>
-    </None>
-    <None Include="gbm8.c">
+    </Compile>
+    <Compile Include="gbm8.c">
       <SubType>compile</SubType>
-    </None>
-    <None Include="sbk.c">
+    </Compile>
+    <Compile Include="sbk.c">
       <SubType>compile</SubType>
-    </None>
-    <None Include="sbk.h">
+    </Compile>
+    <Compile Include="sbk.h">
       <SubType>compile</SubType>
-    </None>
-    <None Include="shiftreg.c">
+    </Compile>
+    <Compile Include="shiftreg.c">
       <SubType>compile</SubType>
-    </None>
-    <None Include="shiftreg.h">
+    </Compile>
+    <Compile Include="shiftreg.h">
       <SubType>compile</SubType>
-    </None>
-    <None Include="fsz.c">
+    </Compile>
+    <Compile Include="fsz.c">
       <SubType>compile</SubType>
-    </None>
-    <None Include="fsz.h">
+    </Compile>
+    <Compile Include="fsz.h">
       <SubType>compile</SubType>
-    </None>
-    <None Include="gbm.c">
+    </Compile>
+    <Compile Include="gbm.c">
       <SubType>compile</SubType>
-    </None>
-    <None Include="gbm.h">
+    </Compile>
+    <Compile Include="gbm.h">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev" />

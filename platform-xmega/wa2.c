@@ -44,6 +44,7 @@ rwSlotDataMsg rSlot;
 uint8_t relay_state;
 uint8_t relay_request;
 uint8_t relay_cmd;
+uint16_t servo_timeout_shadow;
 
 static struct etimer relay_timer;
 
@@ -54,6 +55,7 @@ PROCESS_THREAD(wa2_process, ev, data)
 	
 	// Initialization
 	rSlot.slot = 0xFF;
+	servo_timeout_shadow = eeprom.data.servo_timeout;
 	
 	while (1)
 	{
@@ -368,7 +370,6 @@ void ln_throttle_process(lnMsg *LnPacket)
 					
 				if (dirf_changes)
 				{
-					//sendLocoNet4BytePacket(OPC_LOCO_DIRF, rSlot.slot, LnPacket->ldf.dirf);
 					sendLocoNet4BytePacket(OPC_LOCO_SPD, rSlot.slot, 1);
 				}
 					
@@ -460,8 +461,10 @@ void ln_throttle_process(lnMsg *LnPacket)
 							
 					eeprom.data.servo_time_ratio[0] = servo[0].time_ratio;
 					eeprom.data.servo_time_ratio[1] = servo[1].time_ratio;
-							
+					
+					eeprom.data.servo_timeout = servo_timeout_shadow;
 					eeprom_sync_storage();
+					eeprom.data.servo_timeout = 0;
 				}
 						
 				rSlot.snd = LnPacket->ls.snd;
@@ -473,7 +476,7 @@ void ln_throttle_process(lnMsg *LnPacket)
 void ln_sv_cmd_callback(uint8_t cmd)
 {
 	static uint16_t * servo_act[] = {&servo[0].min, &servo[1].min};
-	static uint16_t servo_timeout_shadow = 0;
+	
 	if (cmd==5)
 	{
 		rSlot.slot = 0;

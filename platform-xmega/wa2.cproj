@@ -4,7 +4,7 @@
     <SchemaVersion>2.0</SchemaVersion>
     <ProjectVersion>6.1</ProjectVersion>
     <ToolchainName>com.Atmel.AVRGCC8.C</ToolchainName>
-    <ProjectGuid>{8c2d6f38-8830-4628-a856-179bf9068512}</ProjectGuid>
+    <ProjectGuid>{f62b3a8b-7c5e-4e97-9037-3f9d0228d805}</ProjectGuid>
     <avrdevice>ATxmega32A4U</avrdevice>
     <avrdeviceseries>none</avrdeviceseries>
     <OutputType>Executable</OutputType>
@@ -312,15 +312,15 @@
     <Compile Include="eam.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="wa2.c">
+    <Compile Include="wa2.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="wa2.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="servo.c">
+    <Compile Include="servo.c">
       <SubType>compile</SubType>
-    </None>
+    </Compile>
     <Compile Include="servo.h">
       <SubType>compile</SubType>
     </Compile>
@@ -330,36 +330,6 @@
     <Compile Include="dev\uart.h">
       <SubType>compile</SubType>
     </Compile>
-    <None Include="gbm8.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="gbm8.c">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="sbk.c">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="sbk.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="shiftreg.c">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="shiftreg.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="fsz.c">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="fsz.h">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="gbm.c">
-      <SubType>compile</SubType>
-    </None>
-    <None Include="gbm.h">
-      <SubType>compile</SubType>
-    </None>
   </ItemGroup>
   <ItemGroup>
     <Folder Include="dev" />
