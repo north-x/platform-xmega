@@ -68,7 +68,7 @@ uint8_t ln_gpio_ack_counter[LN_GPIO_CH_COUNT];
 uint8_t ln_wdt_flag;
 uint8_t ln_wdt_counter __attribute__ ((section (".noinit")));
 uint8_t ln_gpio_lookup[LN_LOOKUP_ENTRIES];
-uint8_t ln_gpio_lookup_list[2*LN_GPIO_CH_COUNT];
+uint8_t ln_gpio_lookup_list[4*LN_GPIO_CH_COUNT];
 
 extern uint16_t deviceID;
 
@@ -589,7 +589,7 @@ uint8_t ln_is_ack_message(uint8_t *msg)
 
 void ln_gpio_process_rx(lnMsg *LnPacket, uint8_t source)
 {
-	uint8_t index;
+	uint8_t idx, index;
 	uint8_t ack, cmd;
 	
 	if (!LnPacket)
@@ -601,8 +601,9 @@ void ln_gpio_process_rx(lnMsg *LnPacket, uint8_t source)
 	uint8_t checksum = getLnMsgChecksum(LnPacket) & LN_LOOKUP_MASK;
 	
 	// Loop over all valid entries
-	for (index = ln_gpio_lookup[checksum];index!=0xFF;index = ln_gpio_lookup_list[index])
+	for (idx = ln_gpio_lookup[checksum];idx!=0xFF;idx = ln_gpio_lookup_list[idx])
 	{
+		index = idx % (2*LN_GPIO_CH_COUNT);
 		// 1. Find a matching opcode
 		// - either a direct match, or
 		// - by matching a switch report/request pair
@@ -821,6 +822,47 @@ void ln_update_lookup(void)
 			}
 			
 			ln_gpio_lookup_list[index] = 0xFF;
+		}
+	}
+	
+	if (eeprom.data.ln_gpio_ack_count>0)
+	{
+		for (index=(2*LN_GPIO_CH_COUNT);index<(4*LN_GPIO_CH_COUNT);index++)
+		{
+			lnMsg * msg = (lnMsg *)eeprom.data.ln_gpio_opcode[index-(2*LN_GPIO_CH_COUNT)];
+			
+			if (msg->data[0]!=OPC_SW_REQ)
+				continue;
+			
+			checksum = (0xFF
+						^ OPC_SW_REP
+						^ msg->data[1]
+						^ ((msg->data[2]&0xF)|OPC_SW_REP_SW|OPC_SW_REP_INPUTS|((msg->data[2]&OPC_SW_REQ_DIR)?OPC_SW_REP_HI:0))
+						) & LN_LOOKUP_MASK;
+			
+			if (ln_gpio_lookup[checksum]==0xFF)
+			{
+				ln_gpio_lookup[checksum] = index;
+				ln_gpio_lookup_list[index] = 0xFF;
+			}
+			else
+			{
+				uint8_t idx = ln_gpio_lookup[checksum];
+				
+				lookup_loop2:
+				
+				if (ln_gpio_lookup_list[idx]==0xFF)
+				{
+					ln_gpio_lookup_list[idx] = index;
+				}
+				else
+				{
+					idx = ln_gpio_lookup_list[idx];
+					goto lookup_loop2;
+				}
+				
+				ln_gpio_lookup_list[index] = 0xFF;
+			}
 		}
 	}
 }

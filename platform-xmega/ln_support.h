@@ -52,7 +52,7 @@
  */
 #ifdef SV_CFG
 SV(151, "LN Threshold Voltage x10", eeprom.data.ln_threshold, ln_update_threshold)
-SV(152, "LN Ack Count", eeprom.data.ln_gpio_ack_count, 0)
+SV(152, "LN Ack Count", eeprom.data.ln_gpio_ack_count, ln_trigger_lookup_update)
 SV(153, "LN GPIO Configuration", eeprom.data.ln_gpio_config, 0)
 SV(154, "LN GPIO Direction L", eeprom.data.ln_gpio_dir[0], 0)
 SV(155, "LN GPIO Direction H", eeprom.data.ln_gpio_dir[1], 0)
@@ -290,7 +290,7 @@ extern uint8_t ln_gpio_status_flag[LN_GPIO_BW];
 extern uint8_t ln_wdt_counter;
 extern LnBuf LnBuffer;
 extern uint8_t ln_gpio_lookup[LN_LOOKUP_ENTRIES];
-extern uint8_t ln_gpio_lookup_list[2*LN_GPIO_CH_COUNT];
+extern uint8_t ln_gpio_lookup_list[4*LN_GPIO_CH_COUNT];
 
 void loconet_init(void);
 uint8_t ln_create_message(uint8_t *msg);
