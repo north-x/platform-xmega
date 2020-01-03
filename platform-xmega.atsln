@@ -9,6 +9,8 @@ Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "eam", "platform-xmega\eam.c
 EndProject
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "gbm8", "platform-xmega\gbm8.cproj", "{DF113BEE-3323-4B1B-A65C-0C203772B8D7}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "consist_helper", "platform-xmega\consist_helper.cproj", "{C5EFA240-26C7-49F3-BED6-5625C8C27B21}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -31,6 +33,10 @@ Global
 		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Debug|AVR.Build.0 = Debug|AVR
 		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Release|AVR.ActiveCfg = Release|AVR
 		{DF113BEE-3323-4B1B-A65C-0C203772B8D7}.Release|AVR.Build.0 = Release|AVR
+		{C5EFA240-26C7-49F3-BED6-5625C8C27B21}.Debug|AVR.ActiveCfg = Debug|AVR
+		{C5EFA240-26C7-49F3-BED6-5625C8C27B21}.Debug|AVR.Build.0 = Debug|AVR
+		{C5EFA240-26C7-49F3-BED6-5625C8C27B21}.Release|AVR.ActiveCfg = Release|AVR
+		{C5EFA240-26C7-49F3-BED6-5625C8C27B21}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

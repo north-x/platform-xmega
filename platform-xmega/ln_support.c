@@ -44,6 +44,8 @@
 #include "sys/utils.h"
 #include "dev/uart.h"
 
+void setLocoNetBuffers(LnBuf *RxBuffer, LnBuf *RxBuffer2);
+
 PROCESS(ln_process, "Loconet Handler");
 PROCESS(ln_ack_process, "Loconet Ack Handler");
 PROCESS(ln_wdt_process, "Loconet Watchdog Handler");
@@ -57,6 +59,9 @@ static process_event_t ln_ack_event;
 LnBuf LnBuffer;
 LnBuf LnTxBuffer;
 LnBuf LnSerialBuffer;
+LnBuf LnBuffer2;
+LnBuf LnBuffer3;
+
 
 uint8_t ln_gpio_tx[LN_GPIO_BW];
 uint8_t ln_gpio_tx_ack[LN_GPIO_BW];
@@ -97,6 +102,7 @@ void loconet_init(void)
 		usb_init();	
 	}
 	
+	setLocoNetBuffers(&LnBuffer2, &LnBuffer3);
 	initLocoNet(&LnBuffer);
 	lnTxEcho = 0;
 	ACA.CTRLB = ((eeprom.data.ln_threshold/4)-1)&0x3F;

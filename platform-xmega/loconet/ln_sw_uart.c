@@ -124,14 +124,19 @@
 volatile byte    		lnState ;
 volatile byte				lnBitCount ;
 volatile byte				lnCurrentByte ;
+volatile byte			 ln_channel_detect;
 #else
 #define lnState GPIOR0
 #define lnBitCount GPIOR1
 #define lnCurrentByte GPIOR2
+#define ln_channel_detect GPIOR3
 #endif
 volatile uint16_t       lnCompareTarget ;
 
 LnBuf               * lnRxBuffer ;
+LnBuf               * lnRxBuffer2 ;
+LnBuf               * lnRxBuffer3 ;
+
 volatile lnMsg      * volatile lnTxData ;
 volatile byte				lnTxIndex ;
 volatile byte				lnTxLength ;
@@ -205,6 +210,7 @@ ISR(TCE0_CCA_vect)
 			// Prepare ISR to receive byte
 			TCE0.INTFLAGS = TC0_CCCIF_bm;
 			TCE0.INTCTRLB |= TC_CCCINTLVL_HI_gc;
+			ln_channel_detect = PORTC.IN;
 		}
 	}
 	else
@@ -228,6 +234,7 @@ ISR(TCE0_CCA_vect)
 			// Prepare ISR to receive byte
 			TCE0.INTFLAGS = TC0_CCCIF_bm;
 			TCE0.INTCTRLB |= TC_CCCINTLVL_HI_gc;
+			ln_channel_detect = PORTC.IN;
 		}
 	}
 }
@@ -306,9 +313,16 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		if (!(filter_cnt))
 			lnRxBuffer->Stats.RxErrors++ ;
 		else
+		{
 			// Put the received byte in the buffer
 			addByteLnBuf( lnRxBuffer, lnCurrentByte ) ;
-
+			
+			if ((ln_channel_detect&(1<<6))==0)
+				addByteLnBuf(lnRxBuffer2, lnCurrentByte);
+				
+			if ((ln_channel_detect&(1<<5))==0)
+				addByteLnBuf(lnRxBuffer3, lnCurrentByte);
+		}
 		lnBitCount = 0 ;
 		lnState = LN_ST_CD_BACKOFF ;
 	}
@@ -406,6 +420,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 			TCE0.INTCTRLB &= ~TC_CCCINTLVL_HI_gc;
 		}
 	}
+}
+void setLocoNetBuffers(LnBuf *RxBuffer, LnBuf *RxBuffer2)
+{
+	lnRxBuffer2 = RxBuffer;
+	lnRxBuffer3 = RxBuffer2;
 }
 
 void initLocoNetHardware( LnBuf *RxBuffer )
