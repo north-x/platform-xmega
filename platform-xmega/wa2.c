@@ -45,6 +45,8 @@ uint8_t relay_state;
 uint8_t relay_request;
 uint8_t relay_cmd;
 uint16_t servo_timeout_shadow;
+uint8_t servo_config_mode_active;
+clock_time_t servo_config_mode_timeout;
 
 static struct etimer relay_timer;
 
@@ -184,6 +186,17 @@ PROCESS_THREAD(wa2_process, ev, data)
 			}
 			
 		}
+		
+		if (servo_config_mode_active==2)
+		{
+			clock_time_t now = clock_time();
+			
+			if (now - servo_config_mode_timeout > (int32_t) 60*CLOCK_SECOND)
+			{
+				eeprom.data.servo_timeout = servo_timeout_shadow;
+				servo_config_mode_active = 0;
+			}
+		}
 	}
 	
 	PROCESS_END();
@@ -233,6 +246,15 @@ void ln_throttle_process(lnMsg *LnPacket)
 		case OPC_MOVE_SLOTS:
 			if (LnPacket->sm.src==LnPacket->sm.dest && LnPacket->sm.src==rSlot.slot)
 			{
+				if (servo_config_mode_active==0)
+				{
+					servo_timeout_shadow = eeprom.data.servo_timeout;
+					eeprom.data.servo_timeout = 0;
+				}
+
+				servo_config_mode_active = 2;
+				servo_config_mode_timeout = clock_time();
+				
 				if (rSlot.slot==0)
 				{
 					rSlot.slot = (eeprom.data.sv_destination_id&0x7F)?(eeprom.data.sv_destination_id&0x7F):1;
@@ -276,6 +298,7 @@ void ln_throttle_process(lnMsg *LnPacket)
 		case OPC_LOCO_DIRF:
 			if (LnPacket->ldf.slot==rSlot.slot)
 			{
+				servo_config_mode_timeout = clock_time();
 				uint8_t dirf_changes = rSlot.dirf^LnPacket->ldf.dirf;
 					
 				// Changes in DIR or F0
@@ -367,6 +390,36 @@ void ln_throttle_process(lnMsg *LnPacket)
 							break;
 					}
 				}
+				
+				// F3 Load EEPROM Settings
+				if (dirf_changes&(1<<2))
+				{
+					servo[0].min = eeprom.data.servo_min[0];
+					servo[1].min = eeprom.data.servo_min[1];
+					
+					servo[0].max = eeprom.data.servo_max[0];
+					servo[1].max = eeprom.data.servo_max[1];
+					
+					servo[0].time_ratio = eeprom.data.servo_time_ratio[0];
+					servo[1].time_ratio = eeprom.data.servo_time_ratio[1];
+				}
+				
+				// F4 Save Config
+				if (dirf_changes&(1<<3))
+				{
+					eeprom.data.servo_min[0] = servo[0].min;
+					eeprom.data.servo_min[1] = servo[1].min;
+					
+					eeprom.data.servo_max[0] = servo[0].max;
+					eeprom.data.servo_max[1] = servo[1].max;
+					
+					eeprom.data.servo_time_ratio[0] = servo[0].time_ratio;
+					eeprom.data.servo_time_ratio[1] = servo[1].time_ratio;
+					
+					eeprom.data.servo_timeout = servo_timeout_shadow;
+					eeprom_sync_storage();
+					eeprom.data.servo_timeout = 0;
+				}
 					
 				if (dirf_changes)
 				{
@@ -379,6 +432,7 @@ void ln_throttle_process(lnMsg *LnPacket)
 		case OPC_LOCO_SPD:
 			if (LnPacket->lsp.slot==rSlot.slot)
 			{
+				servo_config_mode_timeout = clock_time();
 				if (LnPacket->lsp.spd==1)
 				{
 					servo_base = *servo_act;
@@ -424,6 +478,7 @@ void ln_throttle_process(lnMsg *LnPacket)
 		case OPC_LOCO_SND:
 			if (LnPacket->ls.slot==rSlot.slot)
 			{
+				servo_config_mode_timeout = clock_time();
 				uint8_t snd_changes = rSlot.snd^LnPacket->ls.snd;
 						
 				// F5 Increase Speed
@@ -480,14 +535,16 @@ void ln_sv_cmd_callback(uint8_t cmd)
 	if (cmd==5)
 	{
 		rSlot.slot = 0;
-		if (eeprom.data.servo_timeout==0)
+		if (servo_config_mode_active!=0)
 		{
 			eeprom.data.servo_timeout = servo_timeout_shadow;
+			servo_config_mode_active = 0;
 		}
 		else
 		{
 			servo_timeout_shadow = eeprom.data.servo_timeout;
 			eeprom.data.servo_timeout = 0;
+			servo_config_mode_active = 1;
 		}
 	}
 	else if ((cmd>=10) && (cmd<30))
