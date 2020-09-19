@@ -46,6 +46,7 @@ uint8_t relay_request;
 uint8_t relay_cmd;
 uint16_t servo_timeout_shadow;
 uint8_t servo_config_mode_active;
+uint8_t servo_config_state;
 clock_time_t servo_config_mode_timeout;
 
 static struct etimer relay_timer;
@@ -209,6 +210,8 @@ void ln_throttle_process(lnMsg *LnPacket)
 	static uint16_t *servo_act;
 	static int8_t servo_mult;
 	static uint8_t *servo_speed;
+	static uint8_t servo_index;
+	static uint8_t dirf_changes_latched;
 	
 	switch (LnPacket->data[0])
 	{
@@ -246,14 +249,9 @@ void ln_throttle_process(lnMsg *LnPacket)
 		case OPC_MOVE_SLOTS:
 			if (LnPacket->sm.src==LnPacket->sm.dest && LnPacket->sm.src==rSlot.slot)
 			{
-				if (servo_config_mode_active==0)
-				{
-					servo_timeout_shadow = eeprom.data.servo_timeout;
-					eeprom.data.servo_timeout = 0;
-				}
-
-				servo_config_mode_active = 2;
-				servo_config_mode_timeout = clock_time();
+				// Reset state machine
+				servo_config_state = 0;
+				dirf_changes_latched = 0;
 				
 				if (rSlot.slot==0)
 				{
@@ -262,6 +260,7 @@ void ln_throttle_process(lnMsg *LnPacket)
 					rSlot.adr2 = (eeprom.data.sv_destination_id>>7)&0x7F;
 				}
 				
+				servo_index = 0;
 				servo_act = &servo[0].min;
 				servo_base = *servo_act;
 				servo_mult = 1;
@@ -300,137 +299,188 @@ void ln_throttle_process(lnMsg *LnPacket)
 			{
 				servo_config_mode_timeout = clock_time();
 				uint8_t dirf_changes = rSlot.dirf^LnPacket->ldf.dirf;
-					
-				// Changes in DIR or F0
-				if (dirf_changes&((1<<4)|(1<<5)))
+				dirf_changes_latched |= dirf_changes;
+				
+				switch (servo_config_state)
 				{
-					// Restore "unsaved" position
-					*servo_act = servo_base;
-						
-					// Reset multiplier
-					servo_mult = 1;
-						
-					// Direction 0/forward = right 1/reversed=left
-					if ((LnPacket->ldf.dirf&(1<<5))==0)
-					{
-						// F0: 0 -> Servo 1 / 1 -> Servo 2
-						if (LnPacket->ldf.dirf&(1<<4))
+					// State 0: wait for user to press F1 for servo 1 or F2 for servo 2.
+					// If F0 has been pressed previously, then additionally load the default settings of the respective servo.
+					case 0:
+						// Break, if neither F1, nor F2 was pressed
+						if ((dirf_changes&((1<<0)|(1<<1)))==0)
 						{
-							ln_gpio_status[0] |= (1<<1);
-							ln_gpio_status_pre[0] |= (1<<1);
-							ln_gpio_status_flag[0] |= (1<<1);
-							servo_act = &servo[1].max;
-							servo_speed = &servo[1].time_ratio;
+							break;
+						}
+						
+						servo_config_state = 1;
+						if (servo_config_mode_active==0)
+						{
+							servo_timeout_shadow = eeprom.data.servo_timeout;
+							eeprom.data.servo_timeout = 0;
+						}
+
+						servo_config_mode_active = 2;
+						servo_config_mode_timeout = clock_time();
+						
+						// F1: Select Servo 1
+						if (dirf_changes&(1<<0))
+						{
+							servo_index = 0;
+						}
+						// F2: Select Servo 2
+						else if (dirf_changes&(1<<1))
+						{
+							servo_index = 1;
+						}
+					
+						// F0: Load EEPROM Settings
+						if (dirf_changes_latched&(1<<4))
+						{
+							servo[servo_index].min = eeprom.data.servo_min[servo_index];
+							servo[servo_index].max = eeprom.data.servo_max[servo_index];
+							servo[servo_index].time_ratio = eeprom.data.servo_time_ratio[servo_index];
+						}
+						
+						// Direction 0/forward = right 1/reversed=left
+						if ((LnPacket->ldf.dirf&(1<<5))==0)
+						{
+							ln_gpio_status[0] |= (1<<servo_index);
+							ln_gpio_status_pre[0] |= (1<<servo_index);
+							ln_gpio_status_flag[0] |= (1<<servo_index);
+							servo_act = &servo[servo_index].max;
+							servo_speed = &servo[servo_index].time_ratio;
 						}
 						else
 						{
-							ln_gpio_status[0] |= (1<<0);
-							ln_gpio_status_pre[0] |= (1<<0);
-							ln_gpio_status_flag[0] |= (1<<0);
-							servo_act = &servo[0].max;
-							servo_speed = &servo[0].time_ratio;
+							ln_gpio_status[0] &= ~(1<<servo_index);
+							ln_gpio_status_pre[0] &= ~(1<<servo_index);
+							ln_gpio_status_flag[0] |= (1<<servo_index);
+							servo_act = &servo[servo_index].min;
+							servo_speed = &servo[servo_index].time_ratio;
 						}
-					}
-					else
-					{
-						// F0: 0 -> Servo 1 / 1 -> Servo 2
-						if (LnPacket->ldf.dirf&(1<<4))
-						{
-							ln_gpio_status[0] &= ~(1<<1);
-							ln_gpio_status_pre[0] &= ~(1<<1);
-							ln_gpio_status_flag[0] |= (1<<1);
-							servo_act = &servo[1].min;
-							servo_speed = &servo[1].time_ratio;
-						}
-						else
-						{
-							ln_gpio_status[0] &= ~(1<<0);
-							ln_gpio_status_pre[0] &= ~(1<<0);
-							ln_gpio_status_flag[0] |= (1<<0);
-							servo_act = &servo[0].min;
-							servo_speed = &servo[0].time_ratio;
-						}
-					}
 						
-					servo_base = *servo_act;
-				}
-					
-				// F1
-				if ((dirf_changes&(1<<0)))
-				{
-					switch (servo_mult)
-					{
-						case 1:
-							servo_mult = 2;
-							break;
-						case 2:
-							servo_mult = 3;
-							break;
-						case 3:
-						default:
+						servo_base = *servo_act;
+						servo_mult = 1;
+						
+						break;
+					case 1:
+							
+						// Changes in DIR
+						if (dirf_changes&(1<<5))
+						{
+							// Restore "unsaved" position
+							*servo_act = servo_base;
+								
+							// Reset multiplier
 							servo_mult = 1;
-							break;
-					}
-				}
-					
-				// F2
-				if ((dirf_changes&(1<<1)))
-				{
-					switch (servo_mult)
-					{
-						case -1:
-							servo_mult = -2;
-							break;
-						case -2:
-							servo_mult = -3;
-							break;
-						case -3:
-						default:
-							servo_mult = -1;
-							break;
-					}
+							
+							// Direction 0/forward = right 1/reversed=left
+							if ((LnPacket->ldf.dirf&(1<<5))==0)
+							{
+								ln_gpio_status[0] |= (1<<servo_index);
+								ln_gpio_status_pre[0] |= (1<<servo_index);
+								ln_gpio_status_flag[0] |= (1<<servo_index);
+								servo_act = &servo[servo_index].max;
+								servo_speed = &servo[servo_index].time_ratio;
+							}
+							else
+							{
+								ln_gpio_status[0] &= ~(1<<servo_index);
+								ln_gpio_status_pre[0] &= ~(1<<servo_index);
+								ln_gpio_status_flag[0] |= (1<<servo_index);
+								servo_act = &servo[servo_index].min;
+								servo_speed = &servo[servo_index].time_ratio;
+							}
+							
+							servo_base = *servo_act;
+						}
+							
+						// F1
+						if ((dirf_changes&(1<<0)))
+						{
+							switch (servo_mult)
+							{
+								case 1:
+									servo_mult = 2;
+									break;
+								case 2:
+									servo_mult = 3;
+									break;
+								case 3:
+								default:
+									servo_mult = 1;
+									break;
+							}
+						}
+							
+						// F2
+						if ((dirf_changes&(1<<1)))
+						{
+							switch (servo_mult)
+							{
+								case -1:
+									servo_mult = -2;
+									break;
+								case -2:
+									servo_mult = -3;
+									break;
+								case -3:
+								default:
+									servo_mult = -1;
+									break;
+							}
+						}
+						
+						// F3 Increase Speed
+						if ((dirf_changes&(1<<2)))
+						{
+							if (*servo_speed>1)
+								(*servo_speed)--;
+						}
+						
+						// F4 Decrease Speed
+						if ((dirf_changes&(1<<3)))
+						{
+							if (*servo_speed<255)
+							(*servo_speed)++;
+						}
+						
+						// F0 Save Config
+						if (dirf_changes&(1<<4))
+						{
+							eeprom.data.servo_min[servo_index] = servo[servo_index].min;
+							eeprom.data.servo_max[servo_index] = servo[servo_index].max;
+							
+							eeprom.data.servo_time_ratio[servo_index] = servo[servo_index].time_ratio;
+							
+							eeprom.data.servo_timeout = servo_timeout_shadow;
+							eeprom_sync_storage();
+							eeprom.data.servo_timeout = 0;
+							
+							// Reset state machine, allow selection of next servo
+							servo_config_state = 0;
+							// Disable power in the meantime
+							if (servo_config_mode_active!=0)
+							{
+								eeprom.data.servo_timeout = servo_timeout_shadow;
+								servo_config_mode_active = 0;
+							}
+						}
+						
+						break;
 				}
 				
-				// F3 Load EEPROM Settings
-				if (dirf_changes&(1<<2))
-				{
-					servo[0].min = eeprom.data.servo_min[0];
-					servo[1].min = eeprom.data.servo_min[1];
-					
-					servo[0].max = eeprom.data.servo_max[0];
-					servo[1].max = eeprom.data.servo_max[1];
-					
-					servo[0].time_ratio = eeprom.data.servo_time_ratio[0];
-					servo[1].time_ratio = eeprom.data.servo_time_ratio[1];
-				}
-				
-				// F4 Save Config
-				if (dirf_changes&(1<<3))
-				{
-					eeprom.data.servo_min[0] = servo[0].min;
-					eeprom.data.servo_min[1] = servo[1].min;
-					
-					eeprom.data.servo_max[0] = servo[0].max;
-					eeprom.data.servo_max[1] = servo[1].max;
-					
-					eeprom.data.servo_time_ratio[0] = servo[0].time_ratio;
-					eeprom.data.servo_time_ratio[1] = servo[1].time_ratio;
-					
-					eeprom.data.servo_timeout = servo_timeout_shadow;
-					eeprom_sync_storage();
-					eeprom.data.servo_timeout = 0;
-				}
-					
 				if (dirf_changes)
 				{
 					sendLocoNet4BytePacket(OPC_LOCO_SPD, rSlot.slot, 1);
 				}
 					
 				rSlot.dirf = LnPacket->ldf.dirf;
+
 			}
 			break;
 		case OPC_LOCO_SPD:
-			if (LnPacket->lsp.slot==rSlot.slot)
+			if ((LnPacket->lsp.slot==rSlot.slot) && (servo_config_state!=0))
 			{
 				servo_config_mode_timeout = clock_time();
 				if (LnPacket->lsp.spd==1)
@@ -476,52 +526,28 @@ void ln_throttle_process(lnMsg *LnPacket)
 			}
 			break;
 		case OPC_LOCO_SND:
-			if (LnPacket->ls.slot==rSlot.slot)
+			if ((LnPacket->ls.slot==rSlot.slot) && (servo_config_state!=0))
 			{
 				servo_config_mode_timeout = clock_time();
 				uint8_t snd_changes = rSlot.snd^LnPacket->ls.snd;
 						
-				// F5 Increase Speed
+				// F5 Center servo (current position)
 				if (snd_changes&(1<<0))
 				{
-					if (*servo_speed>1)
-						(*servo_speed)--;
+					*servo_act = 32767;
+					servo_base = *servo_act;
+					
 				}
-				// F6 Decrease Speed
+				
+				// F6 Load defaults: Center servo (both positions) and reset speed
 				if (snd_changes&(1<<1))
 				{
-					if (*servo_speed<255)
-					(*servo_speed)++;
+					servo[servo_index].min = 32767;
+					servo[servo_index].max = 32768;
+					servo[servo_index].time_ratio = 16;
+					servo_base = *servo_act;				
 				}
-				// F7 Load EEPROM Settings
-				if (snd_changes&(1<<2))
-				{
-					servo[0].min = eeprom.data.servo_min[0];
-					servo[1].min = eeprom.data.servo_min[1];
-							
-					servo[0].max = eeprom.data.servo_max[0];
-					servo[1].max = eeprom.data.servo_max[1];
-							
-					servo[0].time_ratio = eeprom.data.servo_time_ratio[0];
-					servo[1].time_ratio = eeprom.data.servo_time_ratio[1];
-				}
-				// F8 Save Config
-				if (snd_changes&(1<<3))
-				{
-					eeprom.data.servo_min[0] = servo[0].min;
-					eeprom.data.servo_min[1] = servo[1].min;
-							
-					eeprom.data.servo_max[0] = servo[0].max;
-					eeprom.data.servo_max[1] = servo[1].max;
-							
-					eeprom.data.servo_time_ratio[0] = servo[0].time_ratio;
-					eeprom.data.servo_time_ratio[1] = servo[1].time_ratio;
-					
-					eeprom.data.servo_timeout = servo_timeout_shadow;
-					eeprom_sync_storage();
-					eeprom.data.servo_timeout = 0;
-				}
-						
+				
 				rSlot.snd = LnPacket->ls.snd;
 			}
 			break;
@@ -535,6 +561,7 @@ void ln_sv_cmd_callback(uint8_t cmd)
 	if (cmd==5)
 	{
 		rSlot.slot = 0;
+		servo_config_state = 0;
 		if (servo_config_mode_active!=0)
 		{
 			eeprom.data.servo_timeout = servo_timeout_shadow;
