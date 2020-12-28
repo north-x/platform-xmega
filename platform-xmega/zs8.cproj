@@ -1,0 +1,379 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <SchemaVersion>2.0</SchemaVersion>
+    <ProjectVersion>6.1</ProjectVersion>
+    <ToolchainName>com.Atmel.AVRGCC8.C</ToolchainName>
+    <ProjectGuid>{5bcdb524-06ce-4ffd-bd8a-7e6212710d25}</ProjectGuid>
+    <avrdevice>ATxmega32A4U</avrdevice>
+    <avrdeviceseries>none</avrdeviceseries>
+    <OutputType>Executable</OutputType>
+    <Language>C</Language>
+    <OutputFileName>$(MSBuildProjectName)</OutputFileName>
+    <OutputFileExtension>.elf</OutputFileExtension>
+    <OutputDirectory>$(MSBuildProjectDirectory)\$(Configuration)</OutputDirectory>
+    <AssemblyName>contiki</AssemblyName>
+    <Name>platform-xmega</Name>
+    <RootNamespace>contiki</RootNamespace>
+    <ToolchainFlavour>Native</ToolchainFlavour>
+    <KeepTimersRunning>true</KeepTimersRunning>
+    <OverrideVtor>false</OverrideVtor>
+    <CacheFlash>true</CacheFlash>
+    <ProgFlashFromRam>true</ProgFlashFromRam>
+    <RamSnippetAddress>0x20000000</RamSnippetAddress>
+    <UncachedRange />
+    <OverrideVtorValue>exception_table</OverrideVtorValue>
+    <BootSegment>2</BootSegment>
+    <eraseonlaunchrule>0</eraseonlaunchrule>
+    <AsfFrameworkConfig>
+      <framework-data xmlns="">
+        <options />
+        <configurations />
+        <files />
+        <documentation help="" />
+        <offline-documentation help="" />
+        <dependencies>
+          <content-extension eid="atmel.asf" uuidref="Atmel.ASF" version="3.11.0" />
+        </dependencies>
+      </framework-data>
+    </AsfFrameworkConfig>
+    <avrtool>com.atmel.avrdbg.tool.avrdragon</avrtool>
+    <com_atmel_avrdbg_tool_simulator>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagEnableExtResetOnStartSession>false</JtagEnableExtResetOnStartSession>
+        </InterfaceProperties>
+        <InterfaceName>PDI</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.simulator</ToolType>
+      <ToolNumber>
+      </ToolNumber>
+      <ToolName>Simulator</ToolName>
+    </com_atmel_avrdbg_tool_simulator>
+    <avrtoolinterface>PDI</avrtoolinterface>
+    <com_atmel_avrdbg_tool_avrdragon>
+      <ToolOptions>
+        <InterfaceProperties>
+          <JtagEnableExtResetOnStartSession>false</JtagEnableExtResetOnStartSession>
+        </InterfaceProperties>
+        <InterfaceName>PDI</InterfaceName>
+      </ToolOptions>
+      <ToolType>com.atmel.avrdbg.tool.avrdragon</ToolType>
+      <ToolNumber>00A2000015DA</ToolNumber>
+      <ToolName>AVR Dragon</ToolName>
+    </com_atmel_avrdbg_tool_avrdragon>
+    <preserveEEPROM>False</preserveEEPROM>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Release' ">
+    <ToolchainSettings>
+      <AvrGcc>
+        <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
+        <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
+        <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
+        <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
+        <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
+        <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>F_CPU=32000000L</Value>
+            <Value>AVR</Value>
+            <Value>NDEBUG</Value>
+          </ListValues>
+        </avrgcc.compiler.symbols.DefSymbols>
+        <avrgcc.compiler.directories.IncludePaths>
+          <ListValues>
+            <Value>.</Value>
+            <Value>..</Value>
+            <Value>../loconet</Value>
+            <Value>../platform/$(MSBuildProjectName)</Value>
+          </ListValues>
+        </avrgcc.compiler.directories.IncludePaths>
+        <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
+        <avrgcc.compiler.optimization.PackStructureMembers>True</avrgcc.compiler.optimization.PackStructureMembers>
+        <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
+        <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+        <avrgcc.linker.libraries.Libraries>
+          <ListValues>
+            <Value>libm</Value>
+          </ListValues>
+        </avrgcc.linker.libraries.Libraries>
+      </AvrGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <PropertyGroup Condition=" '$(Configuration)' == 'Debug' ">
+    <ToolchainSettings>
+      <AvrGcc>
+        <avrgcc.common.outputfiles.hex>True</avrgcc.common.outputfiles.hex>
+        <avrgcc.common.outputfiles.lss>True</avrgcc.common.outputfiles.lss>
+        <avrgcc.common.outputfiles.eep>True</avrgcc.common.outputfiles.eep>
+        <avrgcc.common.outputfiles.srec>True</avrgcc.common.outputfiles.srec>
+        <avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>True</avrgcc.compiler.general.ChangeDefaultCharTypeUnsigned>
+        <avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>True</avrgcc.compiler.general.ChangeDefaultBitFieldUnsigned>
+        <avrgcc.compiler.symbols.DefSymbols>
+          <ListValues>
+            <Value>F_CPU=32000000L</Value>
+            <Value>AVR</Value>
+          </ListValues>
+        </avrgcc.compiler.symbols.DefSymbols>
+        <avrgcc.compiler.directories.IncludePaths>
+          <ListValues>
+            <Value>.</Value>
+            <Value>..</Value>
+            <Value>../loconet</Value>
+            <Value>../platform/$(MSBuildProjectName)</Value>
+          </ListValues>
+        </avrgcc.compiler.directories.IncludePaths>
+        <avrgcc.compiler.optimization.level>Optimize (-O1)</avrgcc.compiler.optimization.level>
+        <avrgcc.compiler.optimization.PackStructureMembers>True</avrgcc.compiler.optimization.PackStructureMembers>
+        <avrgcc.compiler.optimization.AllocateBytesNeededForEnum>True</avrgcc.compiler.optimization.AllocateBytesNeededForEnum>
+        <avrgcc.compiler.warnings.AllWarnings>True</avrgcc.compiler.warnings.AllWarnings>
+        <avrgcc.linker.libraries.Libraries>
+          <ListValues>
+            <Value>libm</Value>
+          </ListValues>
+        </avrgcc.linker.libraries.Libraries>
+        <avrgcc.compiler.optimization.DebugLevel>Default (-g2)</avrgcc.compiler.optimization.DebugLevel>
+        <avrgcc.assembler.debugging.DebugLevel>Default (-Wa,-g)</avrgcc.assembler.debugging.DebugLevel>
+      </AvrGcc>
+    </ToolchainSettings>
+  </PropertyGroup>
+  <ItemGroup>
+    <Compile Include="platform\$(MSBuildProjectName)\config.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="contiki-conf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_sw_uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_sw_uart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="main.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\clock-avr.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\clock.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="eeprom.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="eeprom.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ln_support.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="ln_support.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\common_defs.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\IdStorage.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_buf.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_buf.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_interface.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\ln_interface.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\loconet.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\sv.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\sv.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\SVStorage.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\sysdef.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\utils.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="loconet\utils.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="port.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="port.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sv_support.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sv_support.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sv_table.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\arg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\build_defs.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\cc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\clock.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\etimer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\etimer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\lc-addrlabels.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\lc-switch.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\lc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\process.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\process.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\pt.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\timer.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\timer.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\utils.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="sys\utils.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\Descriptors.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\Descriptors.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_cdc.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_cdc.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_defaults.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_ep.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_ep.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_xm.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb\usb_xm.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb_support.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="usb_support.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="zs8.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="zs8.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="eam.c">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="eam.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="wa2.c">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="wa2.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="servo.c">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="servo.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\uart.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="dev\uart.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="gbm8.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="gbm8.c">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="sbk.c">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="sbk.h">
+      <SubType>compile</SubType>
+    </None>
+    <Compile Include="shiftreg.c">
+      <SubType>compile</SubType>
+    </Compile>
+    <Compile Include="shiftreg.h">
+      <SubType>compile</SubType>
+    </Compile>
+    <None Include="fsz.c">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="fsz.h">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="gbm.c">
+      <SubType>compile</SubType>
+    </None>
+    <None Include="gbm.h">
+      <SubType>compile</SubType>
+    </None>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="dev" />
+    <Folder Include="loconet" />
+    <Folder Include="platform\" />
+    <Folder Include="platform\zs8\" />
+    <Folder Include="usb" />
+    <Folder Include="sys" />
+  </ItemGroup>
+  <Import Project="$(AVRSTUDIO_EXE_PATH)\\Vs\\Compiler.targets" />
+</Project>
