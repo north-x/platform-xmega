@@ -102,6 +102,7 @@ void gbm8_hw_detect(void);
 
 extern uint8_t gbm_mode;
 extern uint8_t gbm_version;
+extern const uint8_t track2adc[];
 
 #endif /* gbm8_H_ */
 #endif
