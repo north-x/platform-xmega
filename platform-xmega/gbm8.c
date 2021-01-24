@@ -44,8 +44,6 @@ const uint8_t track2adc[] = {11,10,9,8,3,2,1,0,4,5,6,7};
 #elif defined GBM8_20120104
 const uint8_t track2adc[] = {7,6,5,4,3,2,1,0,8,9,10,11};
 #endif
-// GBM12:
-//const uint8_t track2adc[] = {11,10,9,8,7,6,5,4,3,2,1,0};
 
 PROCESS_THREAD(gbm8_process, ev, data)
 {

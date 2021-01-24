@@ -142,10 +142,10 @@ uint8_t gbm_delay_off[12];
  */
 #ifdef EEPROM_DEFAULT
 .gbm_mode = GBM_MODE_NORMAL,
-.gbm_threshold_on = { 15, 15, 15, 15, 15, 15, 15, 15 },
-.gbm_threshold_off = { 10, 10, 10, 10, 10, 10, 10, 10 },
-.gbm_delay_on = { 5, 5, 5, 5, 5, 5, 5, 5 },
-.gbm_delay_off = { 40, 40, 40, 40, 40, 40, 40, 40 },
+.gbm_threshold_on = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15 },
+.gbm_threshold_off = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 },
+.gbm_delay_on = { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
+.gbm_delay_off = { 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 },
 #endif
 
 /*

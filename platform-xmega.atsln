@@ -11,6 +11,8 @@ Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "gbm8", "platform-xmega\gbm8
 EndProject
 Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "zs8", "platform-xmega\zs8.cproj", "{5BCDB524-06CE-4FFD-BD8A-7E6212710D25}"
 EndProject
+Project("{54F91283-7BC4-4236-8FF9-10F437C3AD48}") = "gbm12", "platform-xmega\gbm12.cproj", "{6E06A839-0B1A-43F3-85E5-DE561E7AED46}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|AVR = Debug|AVR
@@ -37,6 +39,10 @@ Global
 		{5BCDB524-06CE-4FFD-BD8A-7E6212710D25}.Debug|AVR.Build.0 = Debug|AVR
 		{5BCDB524-06CE-4FFD-BD8A-7E6212710D25}.Release|AVR.ActiveCfg = Release|AVR
 		{5BCDB524-06CE-4FFD-BD8A-7E6212710D25}.Release|AVR.Build.0 = Release|AVR
+		{6E06A839-0B1A-43F3-85E5-DE561E7AED46}.Debug|AVR.ActiveCfg = Debug|AVR
+		{6E06A839-0B1A-43F3-85E5-DE561E7AED46}.Debug|AVR.Build.0 = Debug|AVR
+		{6E06A839-0B1A-43F3-85E5-DE561E7AED46}.Release|AVR.ActiveCfg = Release|AVR
+		{6E06A839-0B1A-43F3-85E5-DE561E7AED46}.Release|AVR.Build.0 = Release|AVR
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
