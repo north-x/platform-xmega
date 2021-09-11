@@ -39,6 +39,11 @@
 
 PROCESS(gbm8_process,"GBM8 Application Process");
 
+#if defined GBM8_20121212
+const uint8_t track2adc[] = {11,10,9,8,3,2,1,0,4,5,6,7};
+#elif defined GBM8_20120104
+const uint8_t track2adc[] = {7,6,5,4,3,2,1,0,8,9,10,11};
+#endif
 
 PROCESS_THREAD(gbm8_process, ev, data)
 {
@@ -172,4 +177,99 @@ void gbm8_hw_detect(void)
 	
 	PORTA.PIN3CTRL = PORT_OPC_TOTEM_gc;
 	PORTA.PIN5CTRL = PORT_OPC_TOTEM_gc;
+}
+
+#define PORT_PIN0	(PORTC.IN&(1<<7)) // BM1
+#define PORT_PIN1	(PORTC.IN&(1<<6)) // BM2
+#define PORT_PIN2	(PORTC.IN&(1<<5)) // BM3
+#define PORT_PIN3	(PORTC.IN&(1<<4)) // BM4
+#define PORT_PIN4	(PORTC.IN&(1<<3)) // BM5
+#define PORT_PIN5	(PORTC.IN&(1<<2)) // BM6
+#define PORT_PIN6	(PORTC.IN&(1<<1)) // BM7
+#define PORT_PIN7	(PORTC.IN&(1<<0)) // BM8
+
+#define PORT_PIN8	(0) // P9
+#define PORT_PIN9	(0) // P10
+#define PORT_PIN10	(0) // P11
+#define PORT_PIN11	(0) // P12
+#define PORT_PIN12	(0) // P13
+#define PORT_PIN13	(0) // P14
+#define PORT_PIN14	(0) // P15
+#define PORT_PIN15	(0) // P16
+
+uint16_t port_pin_status(void)
+{
+	uint16_t temp16;
+	temp16 = PORT_PIN0?1:0;
+	temp16 |= PORT_PIN1?2:0;
+	temp16 |= PORT_PIN2?4:0;
+	temp16 |= PORT_PIN3?8:0;
+	temp16 |= PORT_PIN4?16:0;
+	temp16 |= PORT_PIN5?32:0;
+	temp16 |= PORT_PIN6?64:0;
+	temp16 |= PORT_PIN7?128:0;
+	temp16 |= PORT_PIN8?256:0;
+	temp16 |= PORT_PIN9?512:0;
+	temp16 |= PORT_PIN10?1024:0;
+	temp16 |= PORT_PIN11?2048:0;
+	temp16 |= PORT_PIN12?4096:0;
+	temp16 |= PORT_PIN13?8192:0;
+	temp16 |= PORT_PIN14?16384:0;
+	temp16 |= PORT_PIN15?32768:0;
+	
+	return temp16;
+}
+
+void port_di_init(void)
+{
+	// Optional "DCC" input for ADC synchronization
+	PORTD.PIN5CTRL = PORT_ISC_BOTHEDGES_gc | PORT_OPC_PULLDOWN_gc;
+	EVSYS.CH4MUX = EVSYS_CHMUX_PORTD_PIN5_gc;
+
+	if (eeprom.data.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
+	{
+		PORTC.PIN0CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN1CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN2CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN3CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN4CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN5CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN6CTRL = PORT_OPC_PULLUP_gc;
+		PORTC.PIN7CTRL = PORT_OPC_PULLUP_gc;
+	}
+	else
+	{
+		PORTC.PIN0CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN1CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN2CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN3CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN4CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN5CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN6CTRL = PORT_OPC_TOTEM_gc;
+		PORTC.PIN7CTRL = PORT_OPC_TOTEM_gc;
+	}
+	
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 0, 7);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 1, 6);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 2, 5);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 3, 4);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 4, 3);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 5, 2);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 6, 1);
+	MAP_BITS(eeprom.data.port_dir, PORTC.DIR, 7, 0);
+	
+	// Initial key state
+	port_di = port_pin_status();
+}
+
+void port_update_mapping(void)
+{
+	port[2][7] = pwm_port[0].pwm_current;
+	port[2][6] = pwm_port[1].pwm_current;
+	port[2][5] = pwm_port[2].pwm_current;
+	port[2][4] = pwm_port[3].pwm_current;
+	port[2][3] = pwm_port[4].pwm_current;
+	port[2][2] = pwm_port[5].pwm_current;
+	port[2][1] = pwm_port[6].pwm_current;
+	port[2][0] = pwm_port[7].pwm_current;
 }

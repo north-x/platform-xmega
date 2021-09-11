@@ -124,10 +124,10 @@ SV(350, "GBM Delay OFF 12", eeprom.data.gbm_delay_off[11], 0)
  */
 #ifdef EEPROM_CFG
 uint8_t gbm_mode;
-uint8_t gbm_threshold_on[8];
-uint8_t gbm_threshold_off[8];
-uint8_t gbm_delay_on[8];
-uint8_t gbm_delay_off[8];
+uint8_t gbm_threshold_on[12];
+uint8_t gbm_threshold_off[12];
+uint8_t gbm_delay_on[12];
+uint8_t gbm_delay_off[12];
 #endif
 
 /*
@@ -142,10 +142,10 @@ uint8_t gbm_delay_off[8];
  */
 #ifdef EEPROM_DEFAULT
 .gbm_mode = GBM_MODE_NORMAL,
-.gbm_threshold_on = { 15, 15, 15, 15, 15, 15, 15, 15 },
-.gbm_threshold_off = { 10, 10, 10, 10, 10, 10, 10, 10 },
-.gbm_delay_on = { 5, 5, 5, 5, 5, 5, 5, 5 },
-.gbm_delay_off = { 40, 40, 40, 40, 40, 40, 40, 40 },
+.gbm_threshold_on = { 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15, 15 },
+.gbm_threshold_off = { 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10, 10 },
+.gbm_delay_on = { 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5, 5 },
+.gbm_delay_off = { 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40, 40 },
 #endif
 
 /*
@@ -189,11 +189,11 @@ void gbm_helper_multi_delay_on(void);
 void gbm_helper_multi_delay_off(void);
 
 extern volatile uint8_t gbm_adc_phase;
-extern int8_t gbm_value_act[8];
-extern uint8_t gbm_avg[8];
-extern uint16_t gbm_avg_int[8];
-extern uint8_t gbm_register_filt;
-extern uint8_t gbm_register_filt_filt;
+extern int8_t gbm_value_act[12];
+extern uint8_t gbm_avg[12];
+extern uint16_t gbm_avg_int[12];
+extern uint16_t gbm_register_filt;
+extern uint16_t gbm_register_filt_filt;
 
 extern uint8_t gbm_track_select_L;
 extern uint8_t gbm_track_select_H;

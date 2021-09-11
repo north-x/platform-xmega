@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2019, Manuel Vetterli
+ * Copyright (c) 2021, Manuel Vetterli
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -41,7 +41,7 @@
  *
  */
 #ifdef AUTOSTART_CFG
-&gbm8_process,
+&gbm12_process,
 #endif
 
 /*
@@ -81,10 +81,10 @@
 /************************************************************************/
 /* Module Header File                                                   */
 /************************************************************************/
-#ifndef gbm8_H_
-#define gbm8_H_
+#ifndef gbm12_H_
+#define gbm12_H_
 
-PROCESS_NAME(gbm8_process);
+PROCESS_NAME(gbm12_process);
 
 /************************************************************************/
 /* Config Flags                                                         */
@@ -93,12 +93,7 @@ PROCESS_NAME(gbm8_process);
 /************************************************************************/
 /* Function Prototypes                                                  */
 /************************************************************************/
-void update_gbm_mode(void);
-void gbm8_hw_detect(void);
-
-extern uint8_t gbm_mode;
-extern uint8_t gbm_version;
 extern const uint8_t track2adc[];
 
-#endif /* gbm8_H_ */
+#endif /* gbm12_H_ */
 #endif
