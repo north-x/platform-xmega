@@ -30,6 +30,7 @@
  */ 
 
 #include <avr/io.h>
+#include <avr/wdt.h>
 #include "sys/process.h"
 #include "sys/etimer.h"
 #include "ln_interface.h"
@@ -48,6 +49,7 @@ uint16_t servo_timeout_shadow;
 uint8_t servo_config_mode_active;
 uint8_t servo_config_state;
 clock_time_t servo_config_mode_timeout;
+clock_time_t wa2_config_mode_timer;
 
 static struct etimer relay_timer;
 
@@ -188,10 +190,27 @@ PROCESS_THREAD(wa2_process, ev, data)
 			
 		}
 		
+		clock_time_t now = clock_time();
+		
+		if (ACA.STATUS&AC_AC0STATE_bm)
+		{
+			wa2_config_mode_timer = now;
+		}
+		else
+		{
+			if (now - wa2_config_mode_timer > (int32_t) 4*CLOCK_SECOND)
+			{
+				if (rSlot.slot!=0)
+				{
+					wdt_reset();
+				}
+				rSlot.slot = 0;
+				wa2_config_mode_timer = now;
+			}
+		}
+		
 		if (servo_config_mode_active==2)
 		{
-			clock_time_t now = clock_time();
-			
 			if (now - servo_config_mode_timeout > (int32_t) 60*CLOCK_SECOND)
 			{
 				eeprom.data.servo_timeout = servo_timeout_shadow;
