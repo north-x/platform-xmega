@@ -40,6 +40,7 @@
 
 PROCESS(wa2_process,"WA2 Application Process");
 PROCESS(relay_process,"Relay Control Process");
+PROCESS(dwarf_process,"Zwerg Control Process");
 
 rwSlotDataMsg rSlot;
 uint8_t relay_state;
@@ -784,6 +785,130 @@ PROCESS_THREAD(relay_process, ev, data)
 		
 		PROCESS_YIELD();
 		etimer_reset(&relay_timer);
+	}
+	
+	PROCESS_END();
+}
+
+PROCESS_THREAD(dwarf_process, ev, data)
+{
+	static uint8_t dwarf1_mapping[3];
+	static uint8_t dwarf2_mapping[3];
+	
+	PROCESS_BEGIN();
+	
+	// Initialization
+	for (uint8_t index=0;index<16;index++)
+	{
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_L+112)
+			dwarf1_mapping[0] = index;
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_R+112)
+			dwarf1_mapping[1] = index;
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_T+112)
+			dwarf1_mapping[2] = index;
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_L+112)
+			dwarf2_mapping[0] = index;
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_R+112)
+			dwarf2_mapping[1] = index;
+		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_T+112)
+			dwarf2_mapping[2] = index;
+	}
+	
+	port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+	
+	while (1)
+	{
+		PROCESS_PAUSE();
+		
+		// Zwerg 1
+		// Check if a new command was received
+		if (ln_gpio_status_flag[0]&(1<<2))
+		{
+			port_user &= ~((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+			// Check that all outputs are off before applying new outputs
+			if ((pwm_port[dwarf1_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[0]]) &&
+				(pwm_port[dwarf1_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[1]]) &&
+				(pwm_port[dwarf1_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[2]]))
+			{
+				// Clear flag
+				ln_gpio_status_flag[0] &= ~(1<<2);
+				// Set new outputs accordingly
+				if (ln_gpio_status[0]&(1<<2))
+				{
+					port_user |= ((1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+				}
+				else
+				{
+					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R));
+				}
+			}
+		}
+		else if (ln_gpio_status_flag[0]&(1<<3))
+		{
+			port_user &= ~((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+			// Check that all outputs are off before applying new outputs
+			if ((pwm_port[dwarf1_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[0]]) &&
+				(pwm_port[dwarf1_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[1]]) &&
+				(pwm_port[dwarf1_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[2]]))
+			{
+				// Clear flag
+				ln_gpio_status_flag[0] &= ~(1<<3);
+				// Set new outputs accordingly
+				if (ln_gpio_status[0]&(1<<3))
+				{
+					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_T));
+				}
+				else
+				{
+					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R));
+				}
+			}
+		}
+		
+		// Zwerg 2
+		// Check if a new command was received
+		if (ln_gpio_status_flag[0]&(1<<4))
+		{
+			port_user &= ~((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+			// Check that all outputs are off before applying new outputs
+			if ((pwm_port[dwarf2_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[0]]) &&
+				(pwm_port[dwarf2_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[1]]) &&
+				(pwm_port[dwarf2_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[2]]))
+			{
+				// Clear flag
+				ln_gpio_status_flag[0] &= ~(1<<4);
+				// Set new outputs accordingly
+				if (ln_gpio_status[0]&(1<<4))
+				{
+					port_user |= ((1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+				}
+				else
+				{
+					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+				}
+			}
+		}
+		else if (ln_gpio_status_flag[0]&(1<<5))
+		{
+			port_user &= ~((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+			// Check that all outputs are off before applying new outputs
+			if ((pwm_port[dwarf2_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[0]]) &&
+				(pwm_port[dwarf2_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[1]]) &&
+				(pwm_port[dwarf2_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[2]]))
+			{
+				// Clear flag
+				ln_gpio_status_flag[0] &= ~(1<<5);
+				// Set new outputs accordingly
+				if (ln_gpio_status[0]&(1<<5))
+				{
+					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_T));
+				}
+				else
+				{
+					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+				}
+			}
+		}	
 	}
 	
 	PROCESS_END();
