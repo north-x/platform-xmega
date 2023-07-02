@@ -137,12 +137,6 @@ void servo_power_disable(void);
 #define PU_RELAY_RC3	5
 #define PU_RELAY_RC4	6
 #define PU_RELAY2_REQ	7
-#define PU_DWARF1_L		8
-#define PU_DWARF1_R		9
-#define PU_DWARF1_T		10
-#define PU_DWARF2_L		11
-#define PU_DWARF2_R		12
-#define PU_DWARF2_T		13
 
 
 #define RELAY_CMD_LEFT1		1
