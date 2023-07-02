@@ -50,26 +50,10 @@ PROCESS_THREAD(gbm8_process, ev, data)
 	
 	PROCESS_BEGIN();
 	
-	// Initialization
-#if defined GBM8_20121212
-	gbm8_hw_detect();
-#endif
-	
 	while (1)
 	{
 		PROCESS_PAUSE();
-		
-		// Reconfigure comparator to match hardware
-		if (gbm_version==3)
-		{
-			ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-			eeprom.data.gbm_mode = GBM_MODE_FSZ;
-		}
-		else if (gbm_version==2)
-		{
-			ACA.AC0MUXCTRL = AC_MUXPOS_PIN5_gc | AC_MUXNEG_SCALER_gc;
-		}
-		
+			
 		update_gbm_mode();
 		
 		PROCESS_EXIT();
@@ -79,7 +63,6 @@ PROCESS_THREAD(gbm8_process, ev, data)
 }
 
 uint8_t gbm_mode = GBM_MODE_INIT;
-uint8_t gbm_version;
 
 PROCESS_NAME(fsz_process);
 PROCESS_NAME(sbk_in_process);
@@ -104,6 +87,7 @@ void update_gbm_mode(void)
 			PORTCFG.VPCTRLB = PORTCFG_VP02MAP_PORTC_gc | PORTCFG_VP13MAP_PORTD_gc;
 			break;
 		case GBM_MODE_FSZ:
+		case GBM_MODE_FSU:
 			process_exit(&fsz_process);
 			PORTCFG.VPCTRLB = PORTCFG_VP02MAP_PORTC_gc | PORTCFG_VP13MAP_PORTD_gc;
 			break;
@@ -125,58 +109,13 @@ void update_gbm_mode(void)
 			process_start(&sbk_in_process, NULL);
 			break;
 		case GBM_MODE_FSZ:
+		case GBM_MODE_FSU:
 			PORTCFG.VPCTRLB = PORTCFG_VP02MAP_PORTR_gc | PORTCFG_VP13MAP_PORTD_gc;
 			process_start(&fsz_process, NULL);
 			break;
 	}
 	
 	gbm_mode = eeprom.data.gbm_mode;
-}
-
-/**
- * Detect board version
- *
- * This function automatically detects the available LN communication
- * hardware and initializes the needed peripherals.
- *
- * Idea: Enable pullup on LN_RX lines, if threshold is not reached
- * the pin is a GBM input
- */
-void gbm8_hw_detect(void)
-{
-	ACA.CTRLB = 14; // 750mV Threshold
-	
-	PORTA.PIN3CTRL = PORT_OPC_PULLUP_gc;
-	PORTA.PIN5CTRL = PORT_OPC_PULLUP_gc;
-	
-	// connect comparators to pins
-	ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
-	ACA.AC1MUXCTRL = AC_MUXPOS_PIN5_gc | AC_MUXNEG_SCALER_gc;
-	
-	// Enable comparator
-	ACA.AC0CTRL = AC_ENABLE_bm | AC_INTLVL_OFF_gc | AC_HYSMODE_SMALL_gc;
-	ACA.AC1CTRL = AC_ENABLE_bm | AC_INTLVL_OFF_gc | AC_HYSMODE_SMALL_gc;
-	_delay_ms(1);
-	/*
-	switch ((ACA.STATUS>>AC_AC0STATE_bp)&3)
-	{
-		case 0:
-			// Board is a GBM8 20120104 (not supported)
-		case 1:
-			// not valid
-		case 2:
-			// Board is a GBM8 20121212
-		case 3:
-			// Board is an FSZ
-	}
-	*/
-	gbm_version = (ACA.STATUS>>AC_AC0STATE_bp)&3;
-	
-	ACA.AC0CTRL = 0;
-	ACA.AC1CTRL = 0;
-	
-	PORTA.PIN3CTRL = PORT_OPC_TOTEM_gc;
-	PORTA.PIN5CTRL = PORT_OPC_TOTEM_gc;
 }
 
 #define PORT_PIN0	(PORTC.IN&(1<<7)) // BM1

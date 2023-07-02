@@ -101,6 +101,17 @@ void loconet_init(void)
 	lnTxEcho = 0;
 	ACA.CTRLB = ((eeprom.data.ln_threshold/4)-1)&0x3F;
 	
+	if (eeprom.data.ln_gpio_config&(1<<LN_GPIO_CONFIG_LNRX_PA5))
+	{
+		// GBM8
+		ACA.AC0MUXCTRL = AC_MUXPOS_PIN5_gc | AC_MUXNEG_SCALER_gc;
+	}
+	else
+	{
+		// Default
+		ACA.AC0MUXCTRL = AC_MUXPOS_PIN3_gc | AC_MUXNEG_SCALER_gc;
+	}
+	
 	if (eeprom.data.sv_serial_number==0xFFFF)
 	{
 		eeprom.data.sv_serial_number = deviceID;

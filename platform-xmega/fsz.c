@@ -73,47 +73,70 @@ PROCESS_THREAD(fsz_process, ev, data)
 				fsz_register[index].clear = 0;
 			}
 			
+			if (fsz_register[index].toggle!=0)
+			{
+				fsz_register[index].value ^= fsz_register[index].toggle;
+				fsz_register[index].toggle = 0;
+			}
+			
 			if (fsz_register[index].value!=fsz_register[index].shadow)
 			{
 				fsz_register[index].shadow = fsz_register[index].value;
 				update_sr = 1;
-				if (index==0)
+				if (eeprom.data.gbm_mode==GBM_MODE_FSZ)
 				{
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 0, 6);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 1, 7);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 2, 4);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 3, 3);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 4, 2);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 5, 1);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 6, 0);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 7, 5);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 8, 2);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 9, 3);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 10, 4);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 11, 5);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 12, 1);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 13, 0);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 14, 7);
-					MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 15, 6);
+					if (index==0)
+					{
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 0, 6);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 1, 7);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 2, 4);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 3, 3);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 4, 2);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 5, 1);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 6, 0);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 7, 5);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 8, 2);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 9, 3);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 10, 4);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 11, 5);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 12, 1);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 13, 0);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 14, 7);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[1], 15, 6);
+					}
+					else
+					{
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 0, 6);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 1, 7);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 2, 4);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 3, 3);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 4, 2);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 5, 1);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 6, 0);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 7, 5);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 8, 2);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 9, 3);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 10, 4);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 11, 5);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 12, 1);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 13, 0);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 14, 7);
+						MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 15, 6);
+					}
 				}
 				else
 				{
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 0, 6);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 1, 7);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 2, 4);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 3, 3);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 4, 2);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 5, 1);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 6, 0);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[2], 7, 5);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 8, 2);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 9, 3);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 10, 4);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 11, 5);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 12, 1);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 13, 0);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 14, 7);
-					MAP_BITS(fsz_register[1].value, fsz_sr_reg[3], 15, 6);
+					if (index==0)
+					{
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 0, 3);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 1, 2);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 2, 1);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 3, 0);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 4, 7);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 5, 6);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 6, 5);
+						MAP_BITS(fsz_register[0].value, fsz_sr_reg[0], 7, 4);
+					}
 				}
 			}
 		}
@@ -182,6 +205,36 @@ void fsz_sv_helper_clear(void)
 		if (fsz_sv_temp<16)
 		{
 			fsz_register[0].clear = (1<<fsz_sv_temp);
+		}
+	}
+	
+	fsz_sv_temp = 0;
+}
+
+void fsz_sv_helper_toggle(void)
+{
+	if (fsz_sv_temp>200)
+	{
+		fsz_sv_temp -= 201;
+		if (fsz_sv_temp<16)
+		{
+			fsz_register[1].toggle = (1<<fsz_sv_temp);
+		}
+	}
+	else if (fsz_sv_temp>100)
+	{
+		fsz_sv_temp -= 101;
+		if (fsz_sv_temp<16)
+		{
+			fsz_register[0].toggle = (1<<fsz_sv_temp);
+		}
+	}
+	else
+	{
+		fsz_sv_temp--;
+		if (fsz_sv_temp<16)
+		{
+			fsz_register[0].toggle = (1<<fsz_sv_temp);
 		}
 	}
 	

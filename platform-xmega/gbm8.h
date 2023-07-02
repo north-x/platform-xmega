@@ -69,6 +69,8 @@
  *	EEPROM Configuration Variable Default Configuration
  */
 #ifdef EEPROM_DEFAULT
+.ln_gpio_config = (1<<LN_GPIO_CONFIG_GPON)|(1<<LN_GPIO_CONFIG_LNRX_PA5),
+.gbm_mode = GBM_MODE_NORMAL,
 #endif
 
 /*
@@ -89,15 +91,18 @@ PROCESS_NAME(gbm8_process);
 /************************************************************************/
 /* Config Flags                                                         */
 /************************************************************************/
+#define GBM_MODE_INIT 0
+#define GBM_MODE_NORMAL	1
+#define GBM_MODE_SBK 2
+#define GBM_MODE_FSZ 3
+#define GBM_MODE_FSU 4
 
 /************************************************************************/
 /* Function Prototypes                                                  */
 /************************************************************************/
 void update_gbm_mode(void);
-void gbm8_hw_detect(void);
 
 extern uint8_t gbm_mode;
-extern uint8_t gbm_version;
 extern const uint8_t track2adc[];
 
 #endif /* gbm8_H_ */

@@ -43,6 +43,7 @@
 #ifdef AUTOSTART_CFG
 &relay_process,
 &wa2_process,
+&signal_process,
 #endif
 
 /*
@@ -65,6 +66,7 @@ SV(284, "Servo 2 Multipos On", eeprom.data.servo_multipos[1][1], 0)
 #ifdef EEPROM_CFG
 uint8_t servo_multipos_opcode;
 uint8_t servo_multipos[2][2];
+uint8_t signal_aspect[2][4];
 #endif
 
 /*
@@ -118,6 +120,7 @@ SV_CMD_CALLBACK(ln_sv_cmd_callback)
 
 PROCESS_NAME(wa2_process);
 PROCESS_NAME(relay_process);
+PROCESS_NAME(signal_process);
 void ln_throttle_process(lnMsg *LnPacket);
 void ln_sv_cmd_callback(uint8_t cmd);
 
@@ -134,6 +137,7 @@ void servo_power_disable(void);
 #define PU_RELAY_RC3	5
 #define PU_RELAY_RC4	6
 #define PU_RELAY2_REQ	7
+
 
 #define RELAY_CMD_LEFT1		1
 #define RELAY_CMD_RIGHT1	2

@@ -411,6 +411,13 @@ void port_di_init(void)
 
 	uint8_t pinctrl = PORT_OPC_TOTEM_gc;
 	uint16_t mask = 0x777;
+	
+	if (eeprom.data.ln_gpio_config&(1<<LN_GPIO_CONFIG_LNRX_PA5))
+	{
+		// Mask PA4-7
+		mask = 0x707;
+	}
+	
 	if (eeprom.data.port_config&(1<<PORT_MODE_PULLUP_ENABLE))
 	{
 		pinctrl = PORT_OPC_PULLUP_gc;
@@ -432,7 +439,7 @@ void port_di_init(void)
 	ADCA.CALH = pgm_read_byte(offsetof(NVM_PROD_SIGNATURES_t, ADCACAL1));
 	NVM.CMD = NVM_CMD_NO_OPERATION_gc;
 
-	ADCA.PRESCALER  = ADC_PRESCALER_DIV16_gc; 	// 2 MSPS: 32 MHz / 16
+	ADCA.PRESCALER  = ADC_PRESCALER_DIV512_gc; 	// 62.5 kSPS: 32 MHz / 512
 	ADCA.CTRLB      = ADC_RESOLUTION_LEFT12BIT_gc | ADC_CONMODE_bm;     // signed mode, 12 bit left adjusted
 	ADCA.REFCTRL    = ADC_REFSEL_INT1V_gc;		// REF= 1V
 	ADCA.EVCTRL     = ADC_SWEEP_0123_gc | ADC_EVACT_SWEEP_gc | ADC_EVSEL_3456_gc;     // Sweep all channels, event channel 3
