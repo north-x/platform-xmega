@@ -35,8 +35,8 @@
 	#include "sys/process.h"
 #endif
 	
-#include "gbm8.h"
 #include "ln_support.h"
+#include "gbm8.h"
 #include "port.h"
 #include "gbm.h"
 #include "sbk.h"

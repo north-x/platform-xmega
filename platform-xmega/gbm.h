@@ -201,13 +201,5 @@ extern uint8_t gbm_temp_multi;
 
 #define GBM_TIMECONST 128
 
-/************************************************************************/
-/* Config Flags                                                         */
-/************************************************************************/
-#define GBM_MODE_INIT 0
-#define GBM_MODE_NORMAL	1
-#define GBM_MODE_SBK 2
-#define GBM_MODE_FSZ 3
-
 #endif /* gbm_H_ */
 #endif

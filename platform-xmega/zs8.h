@@ -51,12 +51,12 @@
  *
  */
 #ifdef SV_CFG
-SV(367, "Z Section 1 Mux", zs_state[0], 0)
-SV(368, "Z Section 2 Mux", zs_state[1], 0)
-SV(369, "Z Section 3 Mux", zs_state[2], 0)
-SV(370, "Z Section 4 Mux", zs_state[3], 0)
-SV(371, "Z Section 5 Mux", zs_state[4], 0)
-SV(372, "Z Section 6 Mux", zs_state[5], 0)
+SV(372, "Z Section 1 Mux", zs_state[0], 0)
+SV(373, "Z Section 2 Mux", zs_state[1], 0)
+SV(374, "Z Section 3 Mux", zs_state[2], 0)
+SV(375, "Z Section 4 Mux", zs_state[3], 0)
+SV(376, "Z Section 5 Mux", zs_state[4], 0)
+SV(377, "Z Section 6 Mux", zs_state[5], 0)
 #endif
 
 /*

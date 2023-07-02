@@ -40,7 +40,7 @@
 
 PROCESS(wa2_process,"WA2 Application Process");
 PROCESS(relay_process,"Relay Control Process");
-PROCESS(dwarf_process,"Zwerg Control Process");
+PROCESS(signal_process,"Signal Control Process");
 
 rwSlotDataMsg rSlot;
 uint8_t relay_state;
@@ -790,122 +790,181 @@ PROCESS_THREAD(relay_process, ev, data)
 	PROCESS_END();
 }
 
-PROCESS_THREAD(dwarf_process, ev, data)
+PROCESS_THREAD(signal_process, ev, data)
 {
-	static uint8_t dwarf1_mapping[3];
-	static uint8_t dwarf2_mapping[3];
+	static uint8_t signal_mapping[8];
+	static uint8_t signal1_mask = 0;
+	static uint8_t signal2_mask = 0;
+	uint8_t config_mask = 0;
 	
 	PROCESS_BEGIN();
 	
 	// Initialization
+	
+	// Create mapping port_user bit <-> pwm_port index based on mux configuration
+	// Mux 0 has highest priority and thus comes last
 	for (uint8_t index=0;index<16;index++)
 	{
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_L+112)
-			dwarf1_mapping[0] = index;
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_R+112)
-			dwarf1_mapping[1] = index;
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF1_T+112)
-			dwarf1_mapping[2] = index;
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_L+112)
-			dwarf2_mapping[0] = index;
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_R+112)
-			dwarf2_mapping[1] = index;
-		if (eeprom.data.port_map_mux0[index]==PU_DWARF2_T+112)
-			dwarf2_mapping[2] = index;
+		if ((eeprom.data.port_map_mux2[index]>=(112+8)) && (eeprom.data.port_map_mux2[index]<(112+16)))
+		{
+			uint8_t bit = eeprom.data.port_map_mux2[index] - (112+8);
+			signal_mapping[bit] = index;
+			config_mask |= (1<<bit);
+		}
+		
+		if ((eeprom.data.port_map_mux1[index]>=(112+8)) && (eeprom.data.port_map_mux1[index]<(112+16)))
+		{
+			uint8_t bit = eeprom.data.port_map_mux1[index] - (112+8);
+			signal_mapping[bit] = index;
+			config_mask |= (1<<bit);
+		}
+		
+		if ((eeprom.data.port_map_mux0[index]>=(112+8)) && (eeprom.data.port_map_mux0[index]<(112+16)))
+		{
+			uint8_t bit = eeprom.data.port_map_mux0[index] - (112+8);
+			signal_mapping[bit] = index;
+			config_mask |= (1<<bit);
+		}
 	}
 	
-	port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+	// Determine the outputs that are used by the respective signal
+	for (uint8_t index=0;index<4;index++)
+	{
+		signal1_mask |= eeprom.data.signal_aspect[0][index];
+		signal2_mask |= eeprom.data.signal_aspect[1][index];
+	}
+	
+	// Ignore not mapped outputs
+	signal1_mask &= config_mask;
+	signal2_mask &= config_mask;
+	
+	// If signal1 is configured, set first aspect regardless of eeprom status
+	if (signal1_mask!=0)
+	{
+		ln_gpio_status[1] &= ~((1<<0)|(1<<1));
+	}
+	
+	// If signal2 is configured, set first aspect regardless of eeprom status
+	if (signal2_mask!=0)
+	{
+		ln_gpio_status[1] &= ~((1<<2)|(1<<3));
+	}
+	
+	// Apply first signal aspect (usually stop)
+	port_user = (port_user&0xFF)|(((eeprom.data.signal_aspect[0][0]|eeprom.data.signal_aspect[1][0]))<<8);
 	
 	while (1)
 	{
 		PROCESS_PAUSE();
 		
-		// Zwerg 1
+		// Signal 1
 		// Check if a new command was received
-		if (ln_gpio_status_flag[0]&(1<<2))
+		if (ln_gpio_status_flag[1]&(1<<0))
 		{
-			port_user &= ~((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+			// All outputs off
+			port_user &= ~(signal1_mask<<8);
 			// Check that all outputs are off before applying new outputs
-			if ((pwm_port[dwarf1_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[0]]) &&
-				(pwm_port[dwarf1_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[1]]) &&
-				(pwm_port[dwarf1_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[2]]))
+			if ((!(signal1_mask&(1<<0)) || (pwm_port[signal_mapping[0]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[0]])) &&
+				(!(signal1_mask&(1<<1)) || (pwm_port[signal_mapping[1]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[1]])) &&
+				(!(signal1_mask&(1<<2)) || (pwm_port[signal_mapping[2]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[2]])) &&
+				(!(signal1_mask&(1<<3)) || (pwm_port[signal_mapping[3]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[3]])) &&
+				(!(signal1_mask&(1<<4)) || (pwm_port[signal_mapping[4]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[4]])) &&
+				(!(signal1_mask&(1<<5)) || (pwm_port[signal_mapping[5]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[5]])) &&
+				(!(signal1_mask&(1<<6)) || (pwm_port[signal_mapping[6]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[6]])) &&
+				(!(signal1_mask&(1<<7)) || (pwm_port[signal_mapping[7]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[7]])))
 			{
 				// Clear flag
-				ln_gpio_status_flag[0] &= ~(1<<2);
+				ln_gpio_status_flag[1] &= ~(1<<0);
 				// Set new outputs accordingly
-				if (ln_gpio_status[0]&(1<<2))
+				if (ln_gpio_status[1]&(1<<0))
 				{
-					port_user |= ((1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+					port_user |= eeprom.data.signal_aspect[0][1]<<8;
 				}
 				else
 				{
-					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R));
+					port_user |= eeprom.data.signal_aspect[0][0]<<8;
 				}
 			}
 		}
-		else if (ln_gpio_status_flag[0]&(1<<3))
+		else if (ln_gpio_status_flag[1]&(1<<1))
 		{
-			port_user &= ~((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R)|(1<<PU_DWARF1_T));
+			// All outputs off
+			port_user &= ~(signal1_mask<<8);
 			// Check that all outputs are off before applying new outputs
-			if ((pwm_port[dwarf1_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[0]]) &&
-				(pwm_port[dwarf1_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[1]]) &&
-				(pwm_port[dwarf1_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf1_mapping[2]]))
+			if ((!(signal1_mask&(1<<0)) || (pwm_port[signal_mapping[0]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[0]])) &&
+				(!(signal1_mask&(1<<1)) || (pwm_port[signal_mapping[1]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[1]])) &&
+				(!(signal1_mask&(1<<2)) || (pwm_port[signal_mapping[2]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[2]])) &&
+				(!(signal1_mask&(1<<3)) || (pwm_port[signal_mapping[3]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[3]])) &&
+				(!(signal1_mask&(1<<4)) || (pwm_port[signal_mapping[4]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[4]])) &&
+				(!(signal1_mask&(1<<5)) || (pwm_port[signal_mapping[5]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[5]])) &&
+				(!(signal1_mask&(1<<6)) || (pwm_port[signal_mapping[6]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[6]])) &&
+				(!(signal1_mask&(1<<7)) || (pwm_port[signal_mapping[7]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[7]])))
 			{
 				// Clear flag
-				ln_gpio_status_flag[0] &= ~(1<<3);
+				ln_gpio_status_flag[1] &= ~(1<<1);
 				// Set new outputs accordingly
-				if (ln_gpio_status[0]&(1<<3))
+				if (ln_gpio_status[1]&(1<<1))
 				{
-					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_T));
+					port_user |= eeprom.data.signal_aspect[0][3]<<8;
 				}
 				else
 				{
-					port_user |= ((1<<PU_DWARF1_L)|(1<<PU_DWARF1_R));
+					port_user |= eeprom.data.signal_aspect[0][2]<<8;
 				}
 			}
 		}
 		
-		// Zwerg 2
+		// Signal 2
 		// Check if a new command was received
-		if (ln_gpio_status_flag[0]&(1<<4))
+		if (ln_gpio_status_flag[1]&(1<<2))
 		{
-			port_user &= ~((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+			port_user &= ~(signal2_mask<<8);
 			// Check that all outputs are off before applying new outputs
-			if ((pwm_port[dwarf2_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[0]]) &&
-				(pwm_port[dwarf2_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[1]]) &&
-				(pwm_port[dwarf2_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[2]]))
+			if ((!(signal2_mask&(1<<0)) || (pwm_port[signal_mapping[0]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[0]])) &&
+				(!(signal2_mask&(1<<1)) || (pwm_port[signal_mapping[1]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[1]])) &&
+				(!(signal2_mask&(1<<2)) || (pwm_port[signal_mapping[2]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[2]])) &&
+				(!(signal2_mask&(1<<3)) || (pwm_port[signal_mapping[3]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[3]])) &&
+				(!(signal2_mask&(1<<4)) || (pwm_port[signal_mapping[4]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[4]])) &&
+				(!(signal2_mask&(1<<5)) || (pwm_port[signal_mapping[5]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[5]])) &&
+				(!(signal2_mask&(1<<6)) || (pwm_port[signal_mapping[6]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[6]])) &&
+				(!(signal2_mask&(1<<7)) || (pwm_port[signal_mapping[7]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[7]])))
 			{
 				// Clear flag
-				ln_gpio_status_flag[0] &= ~(1<<4);
+				ln_gpio_status_flag[1] &= ~(1<<2);
 				// Set new outputs accordingly
-				if (ln_gpio_status[0]&(1<<4))
+				if (ln_gpio_status[1]&(1<<2))
 				{
-					port_user |= ((1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+					port_user |= eeprom.data.signal_aspect[1][1]<<8;
 				}
 				else
 				{
-					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+					port_user |= eeprom.data.signal_aspect[1][0]<<8;
 				}
 			}
 		}
-		else if (ln_gpio_status_flag[0]&(1<<5))
+		else if (ln_gpio_status_flag[1]&(1<<3))
 		{
-			port_user &= ~((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R)|(1<<PU_DWARF2_T));
+			port_user &= ~(signal2_mask<<8);
 			// Check that all outputs are off before applying new outputs
-			if ((pwm_port[dwarf2_mapping[0]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[0]]) &&
-				(pwm_port[dwarf2_mapping[1]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[1]]) &&
-				(pwm_port[dwarf2_mapping[2]].dimm_current==eeprom.data.port_brightness_off[dwarf2_mapping[2]]))
+			if ((!(signal2_mask&(1<<0)) || (pwm_port[signal_mapping[0]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[0]])) &&
+				(!(signal2_mask&(1<<1)) || (pwm_port[signal_mapping[1]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[1]])) &&
+				(!(signal2_mask&(1<<2)) || (pwm_port[signal_mapping[2]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[2]])) &&
+				(!(signal2_mask&(1<<3)) || (pwm_port[signal_mapping[3]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[3]])) &&
+				(!(signal2_mask&(1<<4)) || (pwm_port[signal_mapping[4]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[4]])) &&
+				(!(signal2_mask&(1<<5)) || (pwm_port[signal_mapping[5]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[5]])) &&
+				(!(signal2_mask&(1<<6)) || (pwm_port[signal_mapping[6]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[6]])) &&
+				(!(signal2_mask&(1<<7)) || (pwm_port[signal_mapping[7]].dimm_current==eeprom.data.port_brightness_off[signal_mapping[7]])))
 			{
 				// Clear flag
-				ln_gpio_status_flag[0] &= ~(1<<5);
+				ln_gpio_status_flag[1] &= ~(1<<3);
 				// Set new outputs accordingly
-				if (ln_gpio_status[0]&(1<<5))
+				if (ln_gpio_status[1]&(1<<3))
 				{
-					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_T));
+					port_user |= eeprom.data.signal_aspect[1][3]<<8;
 				}
 				else
 				{
-					port_user |= ((1<<PU_DWARF2_L)|(1<<PU_DWARF2_R));
+					port_user |= eeprom.data.signal_aspect[1][2]<<8;
 				}
 			}
 		}	
