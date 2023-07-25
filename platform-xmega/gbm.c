@@ -193,7 +193,7 @@ void gbm_init(void)
 
 	ADCA.CH3.MUXCTRL = ADC_CH_MUXPOS_PIN3_gc;
 	ADCA.CH3.CTRL   = ADC_CH_INPUTMODE_SINGLEENDED_gc;
-	ADCA.CH3.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_HI_gc;			// Enable high interrupt for ADC Channel 3
+	ADCA.CH3.INTCTRL = ADC_CH_INTMODE_COMPLETE_gc | ADC_CH_INTLVL_MED_gc;			// Enable medium interrupt for ADC Channel 3
 	
 	ADCA.INTFLAGS = 0xF;			// Clear the interrupt flags
 	ADCA.CTRLA = ADC_ENABLE_bm;		// Enable ADC

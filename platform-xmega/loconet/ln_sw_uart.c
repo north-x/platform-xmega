@@ -195,9 +195,9 @@ ISR(TCE0_CCA_vect)
 			// Clear the Start Bit Interrupt Status Flag and Enable ready to
 			// detect the next Start Bit
 			// Clear pending interrupts and enable SB detection
+			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 			ACA.STATUS = AC_AC0IF_bm;
 			ACA.AC0CTRL |= AC_INTLVL_HI_gc;
-			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 			lnRxBuffer->Stats.RxErrors++;
 		}
 		else
@@ -218,9 +218,9 @@ ISR(TCE0_CCA_vect)
 			// Clear the Start Bit Interrupt Status Flag and Enable ready to
 			// detect the next Start Bit
 			// Clear pending interrupts and enable SB detection
+			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 			PORTD.INTFLAGS = PORT_INT0IF_bm;
 			PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
-			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 			lnRxBuffer->Stats.RxErrors++;
 		}
 		else
@@ -296,11 +296,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 		// Clear the Start Bit Interrupt Status Flag and Enable ready to 
 		// detect the next Start Bit
 		// Clear pending interrupts and enable SB detection
+		TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 		ACA.STATUS = AC_AC0IF_bm;
 		ACA.AC0CTRL |= AC_INTLVL_HI_gc;
 		PORTD.INTFLAGS = PORT_INT0IF_bm;
 		PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
-		TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 				
 		// If the Stop bit is not Set then we have a Framing Error
 		if (!(filter_cnt))
@@ -394,11 +394,11 @@ ISR(LN_TMR_SIGNAL)     /* signal handler for timer0 overflow */
 			// detect the next Start Bit
 			// Clear the Start Bit Interrupt Status Flag and Enable ready to
 			// detect the next Start Bit
+			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 			ACA.STATUS = AC_AC0IF_bm;
 			ACA.AC0CTRL |= AC_INTLVL_HI_gc;
 			PORTD.INTFLAGS = PORT_INT0IF_bm;
 			PORTD.INTCTRL |= PORT_INT0LVL_HI_gc;
-			TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 		}
 		else if( lnBitCount >= LN_BACKOFF_MAX )
 		{ // declare network to free after maximum backoff delay
@@ -419,9 +419,9 @@ void initLocoNetHardware( LnBuf *RxBuffer )
 	TCE0.CTRLD = TC_EVACT_RESTART_gc | TC_EVSEL_CH0_gc;
 	TCE0.CTRLA = TC_CLKSEL_DIV8_gc;
 	
-	TCE0.CCA = LN_BIT_PERIOD/4;
-	TCE0.CCB = LN_BIT_PERIOD/2;
-	TCE0.CCC = 3*LN_BIT_PERIOD/4;
+	TCE0.CCA = LN_BIT_PERIOD/6;
+	TCE0.CCB = LN_BIT_PERIOD/3;
+	TCE0.CCC = LN_BIT_PERIOD/2;
 	
 	DMA.CTRL = 0;
 	DMA.CTRL = DMA_RESET_bm;
