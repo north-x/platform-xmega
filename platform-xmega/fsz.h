@@ -109,6 +109,7 @@ typedef struct fsz_reg {
 	uint16_t set;
 	uint16_t clear;
 	uint16_t toggle;
+	uint16_t toggle_shadow;
 } fsz_reg_t;
 
 extern fsz_reg_t fsz_register[2];

@@ -65,18 +65,22 @@ PROCESS_THREAD(fsz_process, ev, data)
 			{
 				fsz_register[index].value |= fsz_register[index].set;
 				fsz_register[index].set = 0;
+				fsz_register[index].toggle = 0;
+				fsz_register[index].toggle_shadow = 0;
 			}
 			
 			if (fsz_register[index].clear!=0)
 			{
 				fsz_register[index].value &= ~fsz_register[index].clear;
 				fsz_register[index].clear = 0;
+				fsz_register[index].toggle = 0;
+				fsz_register[index].toggle_shadow = 0;
 			}
 			
-			if (fsz_register[index].toggle!=0)
+			if (fsz_register[index].toggle!=fsz_register[index].toggle_shadow)
 			{
 				fsz_register[index].value ^= fsz_register[index].toggle;
-				fsz_register[index].toggle = 0;
+				fsz_register[index].toggle_shadow = fsz_register[index].toggle;
 			}
 			
 			if (fsz_register[index].value!=fsz_register[index].shadow)
