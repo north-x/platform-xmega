@@ -43,7 +43,7 @@
 
 PROCESS(zs8_process, "ZS8 Process");
 
-uint8_t zs_state[6] = {8, 8, 8, 8, 8, 8};
+uint8_t zs_state[6];
 uint8_t shiftreg1, shiftreg2, shiftreg3;
 uint8_t shiftreg1_shadow, shiftreg2_shadow, shiftreg3_shadow;
 uint8_t zs_sr_reg[3];
@@ -123,6 +123,7 @@ void zs_update(void)
 		shiftreg3 |= REL1|REL2;
 		break;
 		case 8:
+		default:
 		shiftreg3 |= REL1|REL2|REL3;
 		break;
 	}
@@ -152,6 +153,7 @@ void zs_update(void)
 		shiftreg3 |= REL5|REL6;
 		break;
 		case 8:
+		default:
 		shiftreg3 |= REL5|REL6|REL7;
 		break;
 	}
@@ -181,6 +183,7 @@ void zs_update(void)
 		shiftreg1 |= REL9|REL10;
 		break;
 		case 8:
+		default:
 		shiftreg1 |= REL9|REL10|REL11;
 		break;
 	}
@@ -210,6 +213,7 @@ void zs_update(void)
 		shiftreg2 |= REL14;
 		break;
 		case 8:
+		default:
 		shiftreg2 |= REL14|REL16;
 		break;
 	}
@@ -239,6 +243,7 @@ void zs_update(void)
 		shiftreg2 |= REL18;
 		break;
 		case 8:
+		default:
 		shiftreg2 |= REL18|REL20;
 		break;
 	}
@@ -268,6 +273,7 @@ void zs_update(void)
 		shiftreg1 |= REL22;
 		break;
 		case 8:
+		default:
 		shiftreg1 |= REL22|REL24;
 		break;
 	}
